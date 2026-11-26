@@ -1,0 +1,58 @@
+export type ErrorCode =
+  | 'VALIDATION_ERROR'
+  | 'NOT_FOUND'
+  | 'UPSTREAM_RATE_LIMITED'
+  | 'UPSTREAM_UNAVAILABLE'
+  | 'UPSTREAM_TIMEOUT'
+  | 'INTERNAL_ERROR';
+
+export type MessageKey =
+  | 'search.queryRequired'
+  | 'search.queryTooLong'
+  | 'search.invalidType'
+  | 'common.invalidId'
+  | 'series.notFound'
+  | 'person.notFound'
+  | 'watchlist.notFound'
+  | 'watchlist.invalidStatus'
+  | 'watchlist.invalidEpisodeId'
+  | 'watchlist.invalidSeasonNumber'
+  | 'watchlist.invalidWatchedFlag'
+  | 'watchlist.episodeNotFound'
+  | 'watchlist.seasonNotFound'
+  | 'preferences.invalidLocale'
+  | 'recommendations.invalidExcludeIds'
+  | 'upstream.rateLimited'
+  | 'upstream.unavailable'
+  | 'upstream.timeout'
+  | 'internal.error';
+
+export type ApiErrorResponse = {
+  error: {
+    code: ErrorCode;
+    message: string;
+  };
+};
+
+const ERROR_STATUS_BY_CODE: Record<ErrorCode, number> = {
+  VALIDATION_ERROR: 400,
+  NOT_FOUND: 404,
+  UPSTREAM_RATE_LIMITED: 429,
+  UPSTREAM_UNAVAILABLE: 502,
+  UPSTREAM_TIMEOUT: 504,
+  INTERNAL_ERROR: 500,
+};
+
+export class AppError extends Error {
+  public readonly statusCode: number;
+
+  constructor(
+    public readonly code: ErrorCode,
+    public readonly messageKey: MessageKey,
+    options?: { cause?: unknown },
+  ) {
+    super(messageKey, options);
+    this.name = 'AppError';
+    this.statusCode = ERROR_STATUS_BY_CODE[code];
+  }
+}

@@ -1,0 +1,125 @@
+:root,
+[data-genre-theme='default'] {
+  --ds-font-display: 'Space Grotesk', system-ui, -apple-system, sans-serif;
+  --ds-font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+  --ds-font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, monospace;
+  --ds-void: #05070e;
+  --ds-surface: rgba(11, 16, 30, 0.78);
+  --ds-surface-elevated: rgba(17, 25, 45, 0.9);
+  --ds-text: #f8fafc;
+  --ds-text-muted: #94a3b8;
+  --ds-border: rgba(148, 163, 184, 0.22);
+  --ds-border-strong: rgba(148, 163, 184, 0.36);
+  --ds-danger: #fb7185;
+  --ds-radius-card: 1rem;
+  --ds-radius-control: 0.625rem;
+  --ds-accent: #22d3ee;
+  --ds-accent-secondary: #a855f7;
+  --ds-accent-ink: #03121a;
+}
+
+[data-genre-theme='sci-fi'] {
+  --ds-accent: #00f0ff;
+  --ds-accent-secondary: #3b82f6;
+  --ds-accent-ink: #02131a;
+}
+
+[data-genre-theme='crime-thriller'] {
+  --ds-accent: #ff4d79;
+  --ds-accent-secondary: #fb923c;
+  --ds-accent-ink: #1a030a;
+}
+
+[data-genre-theme='drama'] {
+  --ds-accent: #c084fc;
+  --ds-accent-secondary: #e879f9;
+  --ds-accent-ink: #13051f;
+}
+
+[data-genre-theme='comedy'] {
+  --ds-accent: #fbbf24;
+  --ds-accent-secondary: #fb7185;
+  --ds-accent-ink: #1a1102;
+}
+
+[data-genre-theme='horror'] {
+  --ds-accent: #f472b6;
+  --ds-accent-secondary: #fb7185;
+  --ds-accent-ink: #1a0411;
+}
+
+[data-genre-theme='fantasy'] {
+  --ds-accent: #34d399;
+  --ds-accent-secondary: #2dd4bf;
+  --ds-accent-ink: #021a12;
+}
+
+[data-genre-theme='action'] {
+  --ds-accent: #fb923c;
+  --ds-accent-secondary: #facc15;
+  --ds-accent-ink: #1a0b02;
+}
+
+[data-genre-theme='documentary'] {
+  --ds-accent: #38bdf8;
+  --ds-accent-secondary: #5eead4;
+  --ds-accent-ink: #02131c;
+}
+
+[data-genre-theme='person'] {
+  --ds-accent: #facc15;
+  --ds-accent-secondary: #818cf8;
+  --ds-accent-ink: #171202;
+}
+
+@keyframes ds-aurora-drift-a {
+  0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+  50% { transform: translate3d(4%, 3%, 0) scale(1.08); }
+}
+
+@keyframes ds-aurora-drift-b {
+  0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+  50% { transform: translate3d(-4%, -3%, 0) scale(1.06); }
+}
+
+.ds-cyber-grid {
+  background-image: radial-gradient(color-mix(in srgb, var(--ds-accent) 24%, transparent) 1px, transparent 1px);
+  background-size: 28px 28px;
+  mask-image: radial-gradient(ellipse 80% 70% at 50% 25%, black 35%, transparent 100%);
+}
+
+.ds-cyber-scanlines {
+  background-image: repeating-linear-gradient(
+    to bottom,
+    rgba(255, 255, 255, 0.025) 0px,
+    rgba(255, 255, 255, 0.025) 1px,
+    transparent 1px,
+    transparent 4px
+  );
+}
+
+.ds-aurora-orb-a {
+  background: radial-gradient(circle, color-mix(in srgb, var(--ds-accent) 32%, transparent) 0%, transparent 70%);
+  animation: ds-aurora-drift-a 20s ease-in-out infinite;
+  transition: background 500ms ease;
+}
+
+.ds-aurora-orb-b {
+  background: radial-gradient(circle, color-mix(in srgb, var(--ds-accent-secondary) 28%, transparent) 0%, transparent 70%);
+  animation: ds-aurora-drift-b 26s ease-in-out infinite;
+  transition: background 500ms ease;
+}
+
+.ds-hud-panel {
+  background: var(--ds-surface);
+  border: 1px solid color-mix(in srgb, var(--ds-accent) 26%, var(--ds-border));
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  transition: border-color 300ms ease, box-shadow 300ms ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ds-aurora-orb-a,
+  .ds-aurora-orb-b {
+    animation: none;
+  }
+}
