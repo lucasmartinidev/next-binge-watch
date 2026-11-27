@@ -1,22 +1,10 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { closeDatabase, createDatabase, type DatabaseClient } from '../data/database';
+import { describe, expect, it, vi } from 'vitest';
 import type { TvmazeClient } from '../data/tvmazeClient';
-import { WatchedEpisodeRepository } from '../data/watchedEpisodeRepository';
-import { WatchlistRepository } from '../data/watchlistRepository';
 import { AppError } from '../types/error';
+import { createInMemoryRepositories } from './inMemoryRepositories';
 import { RecommendationService } from './recommendationService';
 
-describe('RecommendationService discovery degradation (UT-07 regression)', () => {
-  let db: DatabaseClient;
-
-  beforeEach(async () => {
-    db = await createDatabase(':memory:');
-  });
-
-  afterEach(async () => {
-    await closeDatabase(db);
-  });
-
+describe('RecommendationService discovery degradation (UT-05 regression)', () => {
   function makeTimingOutTvmaze(): TvmazeClient {
     return {
       getShowsPage: vi.fn().mockRejectedValue(new AppError('UPSTREAM_TIMEOUT', 'upstream.timeout')),
@@ -25,7 +13,7 @@ describe('RecommendationService discovery degradation (UT-07 regression)', () =>
   }
 
   it('serves watchlist picks when the TVmaze discovery catalog times out', async () => {
-    const watchlistRepo = new WatchlistRepository(db);
+    const { watchlistRepo, episodeRepo } = createInMemoryRepositories();
     await watchlistRepo.upsert({
       seriesId: 300,
       name: 'Queued Show',
@@ -37,7 +25,7 @@ describe('RecommendationService discovery degradation (UT-07 regression)', () =>
       totalEpisodes: 10,
       tvmazeUrl: 'https://tvmaze.com/s/300',
     });
-    const service = new RecommendationService(makeTimingOutTvmaze(), watchlistRepo, new WatchedEpisodeRepository(db));
+    const service = new RecommendationService(makeTimingOutTvmaze(), watchlistRepo, episodeRepo);
     const result = await service.getNextBinge({ locale: 'en', excludeIds: [] });
     expect(result.recommendation?.seriesId).toBe(300);
     expect(result.recommendation?.sourceTier).toBe('want_to_watch');
@@ -45,11 +33,8 @@ describe('RecommendationService discovery degradation (UT-07 regression)', () =>
   });
 
   it('propagates the upstream error when the watchlist offers no fallback pick', async () => {
-    const service = new RecommendationService(
-      makeTimingOutTvmaze(),
-      new WatchlistRepository(db),
-      new WatchedEpisodeRepository(db),
-    );
+    const { watchlistRepo, episodeRepo } = createInMemoryRepositories();
+    const service = new RecommendationService(makeTimingOutTvmaze(), watchlistRepo, episodeRepo);
     await expect(service.getNextBinge({ locale: 'en', excludeIds: [] })).rejects.toMatchObject({
       code: 'UPSTREAM_TIMEOUT',
       statusCode: 504,

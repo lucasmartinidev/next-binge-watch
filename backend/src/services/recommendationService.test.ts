@@ -1,12 +1,9 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { closeDatabase, createDatabase, type DatabaseClient } from '../data/database';
+import { describe, expect, it, vi } from 'vitest';
 import type { TvmazeClient } from '../data/tvmazeClient';
-import { WatchedEpisodeRepository } from '../data/watchedEpisodeRepository';
-import { WatchlistRepository } from '../data/watchlistRepository';
+import { createInMemoryRepositories } from './inMemoryRepositories';
 import { RecommendationService } from './recommendationService';
 
-describe('RecommendationService (UT-07)', () => {
-  let db: DatabaseClient;
+describe('RecommendationService (UT-05)', () => {
   const catalogShows = [
     {
       id: 10,
@@ -26,24 +23,13 @@ describe('RecommendationService (UT-07)', () => {
     },
   ];
 
-  beforeEach(async () => {
-    db = await createDatabase(':memory:');
-  });
-
-  afterEach(async () => {
-    await closeDatabase(db);
-  });
-
   it('recommends top-rated discovery show when watchlist is empty and supports excludeIds', async () => {
     const tvmaze = {
       getShowsPage: vi.fn().mockResolvedValue(catalogShows),
       getShowWithEmbeds: vi.fn().mockResolvedValue(null),
     } as unknown as TvmazeClient;
-    const service = new RecommendationService(
-      tvmaze,
-      new WatchlistRepository(db),
-      new WatchedEpisodeRepository(db),
-    );
+    const { watchlistRepo, episodeRepo } = createInMemoryRepositories();
+    const service = new RecommendationService(tvmaze, watchlistRepo, episodeRepo);
     const first = await service.getNextBinge({ locale: 'en', excludeIds: [] });
     expect(first.recommendation?.seriesId).toBe(10);
     expect(first.recommendation?.sourceTier).toBe('top_rated');
@@ -56,8 +42,7 @@ describe('RecommendationService (UT-07)', () => {
   });
 
   it('prioritizes watching > want_to_watch > genre_discovery', async () => {
-    const watchlistRepo = new WatchlistRepository(db);
-    const episodeRepo = new WatchedEpisodeRepository(db);
+    const { watchlistRepo, episodeRepo } = createInMemoryRepositories();
     await watchlistRepo.upsert({
       seriesId: 169,
       name: 'Breaking Bad',

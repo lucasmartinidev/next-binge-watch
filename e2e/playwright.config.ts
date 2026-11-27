@@ -14,7 +14,7 @@ export default defineConfig({
   },
   webServer: [
     {
-      command: `rm -f ../backend/data/e2e-test.db* && PORT=${BACKEND_PORT} DATABASE_URL=file:./data/e2e-test.db npm run start`,
+      command: `npm run migrate:test:up && npm run db:test:reset && PORT=${BACKEND_PORT} node -e "require('dotenv/config'); if (!process.env.TEST_DATABASE_URL) { throw new Error('TEST_DATABASE_URL is required'); } process.env.DATABASE_URL = process.env.TEST_DATABASE_URL; require('./dist/index.js');"`,
       cwd: '../backend',
       url: `http://localhost:${BACKEND_PORT}/health`,
       reuseExistingServer: false,

@@ -4,11 +4,18 @@ export default defineConfig({
   test: {
     environment: 'node',
     include: ['src/**/*.test.ts'],
+    fileParallelism: false,
     coverage: {
       provider: 'v8',
       reporter: ['text', 'html'],
       include: ['src/**/*.ts'],
-      exclude: ['src/**/*.test.ts', 'src/types/**', 'src/index.ts'],
+      exclude: [
+        'src/**/*.test.ts',
+        'src/data/testDatabase.ts',
+        'src/services/inMemoryRepositories.ts',
+        'src/types/**',
+        'src/index.ts',
+      ],
       thresholds: {
         lines: 80,
         branches: 80,
