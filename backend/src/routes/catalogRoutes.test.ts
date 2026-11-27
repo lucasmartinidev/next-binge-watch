@@ -1,7 +1,8 @@
 import request from 'supertest';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createApp } from '../app';
-import { closeDatabase, createDatabase, type DatabaseClient } from '../data/database';
+import { closeDatabase, type DatabaseClient } from '../data/database';
+import { openTestDatabase } from '../data/testDatabase';
 import { WatchlistRepository } from '../data/watchlistRepository';
 import { WatchedEpisodeRepository } from '../data/watchedEpisodeRepository';
 
@@ -12,11 +13,11 @@ function makeJsonResponse(body: unknown, status = 200): Response {
   });
 }
 
-describe('Catalog HTTP routes integration (IT-01, IT-02, IT-03)', () => {
+describe('Catalog HTTP routes integration (IT-03)', () => {
   let db: DatabaseClient;
 
   beforeEach(async () => {
-    db = await createDatabase(':memory:');
+    db = await openTestDatabase();
   });
 
   afterEach(async () => {
@@ -42,7 +43,7 @@ describe('Catalog HTTP routes integration (IT-01, IT-02, IT-03)', () => {
     expect(okRes.body.items[0].name).toBe('Breaking Bad');
   });
 
-  it('GET /api/series/:id merges SQLite tracking state and pt-BR AKA (IT-02)', async () => {
+  it('GET /api/series/:id merges PostgreSQL tracking state and pt-BR AKA (IT-03)', async () => {
     const watchlistRepo = new WatchlistRepository(db);
     const episodeRepo = new WatchedEpisodeRepository(db);
     await watchlistRepo.upsert({

@@ -1,63 +1,48 @@
-import { mkdir } from 'node:fs/promises';
-import { dirname } from 'node:path';
-import { createClient, type Client } from '@libsql/client';
+import { Pool, type PoolConfig } from 'pg';
+import { logger } from '../config/logger';
 
-const SCHEMA_STATEMENTS = [
-  'PRAGMA foreign_keys = ON;',
-  `CREATE TABLE IF NOT EXISTS watchlist_items (
-    series_id INTEGER PRIMARY KEY,
-    name TEXT NOT NULL,
-    localized_name_pt_br TEXT,
-    image_url TEXT,
-    status TEXT NOT NULL CHECK (status IN ('want_to_watch', 'watching', 'watched')),
-    genres_json TEXT NOT NULL DEFAULT '[]',
-    rating REAL,
-    total_episodes INTEGER NOT NULL DEFAULT 0,
-    tvmaze_url TEXT NOT NULL,
-    created_at TEXT NOT NULL,
-    updated_at TEXT NOT NULL
-  );`,
-  `CREATE TABLE IF NOT EXISTS watched_episodes (
-    series_id INTEGER NOT NULL,
-    episode_id INTEGER NOT NULL,
-    season_number INTEGER NOT NULL,
-    episode_number INTEGER NOT NULL,
-    watched_at TEXT NOT NULL,
-    PRIMARY KEY (series_id, episode_id),
-    FOREIGN KEY (series_id) REFERENCES watchlist_items(series_id) ON DELETE CASCADE
-  );`,
-  `CREATE TABLE IF NOT EXISTS user_preferences (
-    key TEXT PRIMARY KEY,
-    value TEXT NOT NULL,
-    updated_at TEXT NOT NULL
-  );`,
-];
+const MAX_POOL_CONNECTIONS = 10;
+const IDLE_TIMEOUT_MS = 30_000;
+const CONNECTION_TIMEOUT_MS = 5_000;
+const STATEMENT_TIMEOUT_MS = 5_000;
 
-export type DatabaseClient = Client;
+export type DatabaseClient = Pool;
 
-async function ensureDirectoryExists(databaseUrl: string): Promise<void> {
-  if (!databaseUrl.startsWith('file:')) {
-    return;
-  }
-  const filePath = databaseUrl.slice('file:'.length);
-  if (!filePath || filePath === ':memory:') {
-    return;
-  }
-  await mkdir(dirname(filePath), { recursive: true });
+export type DatabaseOptions = {
+  createPool?: (config: PoolConfig) => Pool;
+};
+
+function buildPoolConfig(databaseUrl: string): PoolConfig {
+  return {
+    connectionString: databaseUrl,
+    max: MAX_POOL_CONNECTIONS,
+    idleTimeoutMillis: IDLE_TIMEOUT_MS,
+    connectionTimeoutMillis: CONNECTION_TIMEOUT_MS,
+    statement_timeout: STATEMENT_TIMEOUT_MS,
+  };
 }
 
-export async function createDatabase(databaseUrl: string): Promise<DatabaseClient> {
-  await ensureDirectoryExists(databaseUrl);
-  const client = createClient({ url: databaseUrl });
-  for (const statement of SCHEMA_STATEMENTS) {
-    await client.execute(statement);
+export async function createDatabase(
+  databaseUrl: string,
+  options?: DatabaseOptions,
+): Promise<DatabaseClient> {
+  const poolFactory = options?.createPool ?? ((config: PoolConfig) => new Pool(config));
+  const pool = poolFactory(buildPoolConfig(databaseUrl));
+  pool.on('error', (error: Error) => {
+    logger.error('Unexpected PostgreSQL pool error', error);
+  });
+  try {
+    await pool.query('SELECT 1');
+    return pool;
+  } catch (error: unknown) {
+    await pool.end().catch(() => undefined);
+    throw error;
   }
-  return client;
 }
 
 export async function pingDatabase(client: DatabaseClient): Promise<boolean> {
   try {
-    await client.execute('SELECT 1');
+    await client.query('SELECT 1');
     return true;
   } catch {
     return false;
@@ -65,5 +50,5 @@ export async function pingDatabase(client: DatabaseClient): Promise<boolean> {
 }
 
 export async function closeDatabase(client: DatabaseClient): Promise<void> {
-  client.close();
+  await client.end();
 }

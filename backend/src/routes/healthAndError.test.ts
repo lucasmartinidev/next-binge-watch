@@ -2,19 +2,24 @@ import { Router } from 'express';
 import request from 'supertest';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createApp } from '../app';
-import { closeDatabase, createDatabase, type DatabaseClient } from '../data/database';
+import { closeDatabase, type DatabaseClient } from '../data/database';
+import { openTestDatabase } from '../data/testDatabase';
 import { AppError } from '../types/error';
 
-describe('Health and errorMiddleware integration (IT-07)', () => {
+describe('Health and errorMiddleware integration (IT-05)', () => {
   let db: DatabaseClient;
+  let closedInTest = false;
 
   beforeEach(async () => {
-    db = await createDatabase(':memory:');
+    closedInTest = false;
+    db = await openTestDatabase();
   });
 
   afterEach(async () => {
     vi.restoreAllMocks();
-    await closeDatabase(db);
+    if (!closedInTest) {
+      await closeDatabase(db);
+    }
   });
 
   it('GET /health returns 200 healthy when database is operational', async () => {
@@ -27,6 +32,7 @@ describe('Health and errorMiddleware integration (IT-07)', () => {
   });
 
   it('GET /health returns 503 unhealthy when database check fails', async () => {
+    closedInTest = true;
     await closeDatabase(db);
     const app = createApp({ db });
     const response = await request(app).get('/health');

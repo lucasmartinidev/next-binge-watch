@@ -1,7 +1,8 @@
 import request from 'supertest';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createApp } from '../app';
-import { closeDatabase, createDatabase, type DatabaseClient } from '../data/database';
+import { closeDatabase, type DatabaseClient } from '../data/database';
+import { openTestDatabase } from '../data/testDatabase';
 
 function makeJsonResponse(body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), {
@@ -10,11 +11,11 @@ function makeJsonResponse(body: unknown, status = 200): Response {
   });
 }
 
-describe('Watchlist, Recommendations, and Preferences HTTP integration (IT-04, IT-05, IT-06)', () => {
+describe('Watchlist, Recommendations, and Preferences HTTP integration (IT-04)', () => {
   let db: DatabaseClient;
 
   beforeEach(async () => {
-    db = await createDatabase(':memory:');
+    db = await openTestDatabase();
   });
 
   afterEach(async () => {
@@ -51,7 +52,7 @@ describe('Watchlist, Recommendations, and Preferences HTTP integration (IT-04, I
     }) as unknown as typeof fetch;
   }
 
-  it('persists watchlist CRUD, episode/season toggles, and status filters in SQLite (IT-04)', async () => {
+  it('persists watchlist CRUD, episode/season toggles, and status filters in PostgreSQL (IT-04)', async () => {
     const app = createApp({ db, fetchFn: makeMockFetch() });
     const createRes = await request(app)
       .post('/api/watchlist?lang=pt-BR')

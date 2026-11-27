@@ -1,32 +1,22 @@
-import { mkdtemp, rm } from 'node:fs/promises';
-import { tmpdir } from 'node:os';
-import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { closeDatabase, createDatabase, pingDatabase, type DatabaseClient } from './database';
+import { closeDatabase, pingDatabase, type DatabaseClient } from './database';
 import { PreferencesRepository } from './preferencesRepository';
+import { openTestDatabase } from './testDatabase';
 import { WatchedEpisodeRepository } from './watchedEpisodeRepository';
 import { WatchlistRepository } from './watchlistRepository';
 
-describe('SQLite repositories', () => {
+describe('PostgreSQL repositories (IT-02)', () => {
   let db: DatabaseClient;
 
   beforeEach(async () => {
-    db = await createDatabase(':memory:');
+    db = await openTestDatabase();
   });
 
   afterEach(async () => {
     await closeDatabase(db);
   });
 
-  it('creates parent directory for file-based database URLs', async () => {
-    const tempDir = await mkdtemp(join(tmpdir(), 'nbw-db-'));
-    const fileDb = await createDatabase(`file:${join(tempDir, 'nested', 'test.db')}`);
-    expect(await pingDatabase(fileDb)).toBe(true);
-    await closeDatabase(fileDb);
-    await rm(tempDir, { recursive: true, force: true });
-  });
-
-  it('pings database and persists watchlist and episode progress with cascade delete', async () => {
+  it('pings PostgreSQL and persists watchlist, JSONB genres, and episode progress with cascade delete', async () => {
     expect(await pingDatabase(db)).toBe(true);
     const watchlistRepo = new WatchlistRepository(db);
     const episodeRepo = new WatchedEpisodeRepository(db);
@@ -50,8 +40,13 @@ describe('SQLite repositories', () => {
       { seriesId: 169, episodeId: 12192, seasonNumber: 1, episodeNumber: 1 },
       { seriesId: 169, episodeId: 12193, seasonNumber: 1, episodeNumber: 2 },
     ]);
+    await episodeRepo.markEpisodes([
+      { seriesId: 169, episodeId: 12192, seasonNumber: 1, episodeNumber: 1 },
+    ]);
     const item = await watchlistRepo.findBySeriesId(169);
     expect(item?.status).toBe('watching');
+    expect(item?.genres).toEqual(['Drama', 'Crime']);
+    expect(item?.rating).toBe(9.2);
     expect((await watchlistRepo.listAll()).length).toBe(1);
     expect((await episodeRepo.listBySeriesId(169)).length).toBe(2);
     expect((await episodeRepo.listAllCounts()).get(169)).toBe(2);
@@ -63,11 +58,14 @@ describe('SQLite repositories', () => {
     expect((await episodeRepo.listBySeriesId(169)).length).toBe(0);
   });
 
-  it('persists and retrieves user locale preference', async () => {
+  it('persists and updates user locale preference in PostgreSQL', async () => {
     const repo = new PreferencesRepository(db);
     expect(await repo.getPreferences()).toEqual({ locale: null, updatedAt: null });
-    const saved = await repo.setLocale('pt-BR');
-    expect(saved.locale).toBe('pt-BR');
+    const savedPt = await repo.setLocale('pt-BR');
+    expect(savedPt.locale).toBe('pt-BR');
     expect((await repo.getPreferences()).locale).toBe('pt-BR');
+    const savedEn = await repo.setLocale('en');
+    expect(savedEn.locale).toBe('en');
+    expect((await repo.getPreferences()).locale).toBe('en');
   });
 });

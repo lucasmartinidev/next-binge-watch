@@ -6,7 +6,17 @@
     "dev": "nodemon --exec tsx src/index.ts",
     "build": "tsc",
     "start": "node dist/index.js",
-    "test": "vitest run --coverage",
+    "migrate:up": "node-pg-migrate up -m migrations",
+    "migrate:down": "node-pg-migrate down -m migrations",
+    "migrate:redo": "node-pg-migrate redo -m migrations",
+    "migrate:create": "node-pg-migrate create -m migrations -j ts",
+    "migrate:test:up": "node-pg-migrate up -m migrations -d TEST_DATABASE_URL",
+    "migrate:test:down": "node-pg-migrate down -m migrations -d TEST_DATABASE_URL",
+    "db:up": "docker compose up -d",
+    "db:down": "docker compose down",
+    "db:reset": "docker compose down -v && docker compose up -d",
+    "db:test:reset": "tsx -e \"import { closeDatabase, createDatabase } from './src/data/database'; import { getTestDatabaseUrl, resetTestDatabase } from './src/data/testDatabase'; (async () => { const db = await createDatabase(getTestDatabaseUrl()); try { await resetTestDatabase(db); } finally { await closeDatabase(db); } })();\"",
+    "test": "npm run migrate:test:up && vitest run --coverage",
     "test:watch": "vitest"
   },
   "keywords": [],
@@ -17,6 +27,7 @@
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.3",
     "@types/node": "^24.3.0",
+    "@types/pg": "^8.23.1",
     "@types/supertest": "^7.2.1",
     "@vitest/coverage-v8": "^5.1.1",
     "nodemon": "^3.1.10",
@@ -26,9 +37,10 @@
     "vitest": "^5.1.1"
   },
   "dependencies": {
-    "@libsql/client": "^0.18.0",
     "cors": "^2.8.5",
     "dotenv": "^17.2.1",
-    "express": "^5.1.0"
+    "express": "^5.1.0",
+    "node-pg-migrate": "^9.0.0",
+    "pg": "^8.23.1"
   }
 }

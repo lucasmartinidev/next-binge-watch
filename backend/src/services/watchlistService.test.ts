@@ -1,13 +1,10 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { closeDatabase, createDatabase, type DatabaseClient } from '../data/database';
+import { describe, expect, it, vi } from 'vitest';
 import type { TvmazeClient } from '../data/tvmazeClient';
-import { WatchedEpisodeRepository } from '../data/watchedEpisodeRepository';
-import { WatchlistRepository } from '../data/watchlistRepository';
 import { EpisodeTrackingService } from './episodeTrackingService';
+import { createInMemoryRepositories } from './inMemoryRepositories';
 import { WatchlistService } from './watchlistService';
 
-describe('WatchlistService & EpisodeTrackingService (UT-06)', () => {
-  let db: DatabaseClient;
+describe('WatchlistService & EpisodeTrackingService (UT-04)', () => {
   const sampleShow = {
     id: 169,
     url: 'https://www.tvmaze.com/shows/169/breaking-bad',
@@ -24,21 +21,12 @@ describe('WatchlistService & EpisodeTrackingService (UT-06)', () => {
     },
   };
 
-  beforeEach(async () => {
-    db = await createDatabase(':memory:');
-  });
-
-  afterEach(async () => {
-    await closeDatabase(db);
-  });
-
   it('auto-transitions want_to_watch -> watching -> watched -> watching across episode and season toggles', async () => {
     const tvmaze = {
       getShowWithEmbeds: vi.fn().mockResolvedValue(sampleShow),
       getShowAkas: vi.fn().mockResolvedValue([{ name: 'Breaking Bad: A Química do Mal', country: { code: 'BR' } }]),
     } as unknown as TvmazeClient;
-    const watchlistRepo = new WatchlistRepository(db);
-    const episodeRepo = new WatchedEpisodeRepository(db);
+    const { watchlistRepo, episodeRepo } = createInMemoryRepositories();
     const watchlistService = new WatchlistService(tvmaze, watchlistRepo, episodeRepo);
     const trackingService = new EpisodeTrackingService(tvmaze, watchlistRepo, episodeRepo);
 
@@ -66,8 +54,7 @@ describe('WatchlistService & EpisodeTrackingService (UT-06)', () => {
 
   it('auto-adds an untracked series as watching when marking an episode watched', async () => {
     const tvmaze = { getShowWithEmbeds: vi.fn().mockResolvedValue(sampleShow) } as unknown as TvmazeClient;
-    const watchlistRepo = new WatchlistRepository(db);
-    const episodeRepo = new WatchedEpisodeRepository(db);
+    const { watchlistRepo, episodeRepo } = createInMemoryRepositories();
     const trackingService = new EpisodeTrackingService(tvmaze, watchlistRepo, episodeRepo);
 
     const state = await trackingService.toggleEpisode({ seriesId: 169, episodeId: 101, watched: true });

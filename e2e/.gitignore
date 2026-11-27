@@ -8,6 +8,5 @@ dist/
 npm-debug.log*
 .DS_Store
 coverage/
-data/*.db*
 .vscode/
 .idea/
