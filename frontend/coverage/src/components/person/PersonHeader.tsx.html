@@ -41,9 +41,9 @@
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">100% </span>
+                <span class="strong">50% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>0/0</span>
+                <span class='fraction'>1/2</span>
             </div>
         
             
@@ -97,21 +97,18 @@
 <a name='L21'></a><a href='#L21'>21</a>
 <a name='L22'></a><a href='#L22'>22</a>
 <a name='L23'></a><a href='#L23'>23</a>
-<a name='L24'></a><a href='#L24'>24</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">2x</span>
-<span class="cline-any cline-yes">2x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
+<a name='L24'></a><a href='#L24'>24</a>
+<a name='L25'></a><a href='#L25'>25</a>
+<a name='L26'></a><a href='#L26'>26</a>
+<a name='L27'></a><a href='#L27'>27</a>
+<a name='L28'></a><a href='#L28'>28</a>
+<a name='L29'></a><a href='#L29'>29</a>
+<a name='L30'></a><a href='#L30'>30</a>
+<a name='L31'></a><a href='#L31'>31</a>
+<a name='L32'></a><a href='#L32'>32</a>
+<a name='L33'></a><a href='#L33'>33</a>
+<a name='L34'></a><a href='#L34'>34</a>
+<a name='L35'></a><a href='#L35'>35</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -120,25 +117,61 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">import { ExternalLink } from 'lucide-react';
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">import { ExternalLink, ListChecks } from 'lucide-react';
 import { MediaImage } from '@/components/common/MediaImage';
 import { HudPanel } from '@/components/ds/HudPanel';
+import { NeonButton } from '@/components/ds/NeonButton';
+import { ListMembershipBadges } from '@/components/lists/ListMembershipBadges';
 import { useI18n } from '@/hooks/useI18n';
 import type { PersonProfile } from '@/types/person';
 import { PersonBioList } from './PersonBioList';
 &nbsp;
-export function PersonHeader({ person }: { person: PersonProfile }) {
+export function PersonHeader({ person, onManageLists }: { person: PersonProfile; onManageLists?: () =&gt; void }) {
   const { t } = useI18n();
   return (
     &lt;HudPanel as="section" genreTheme="person" className="flex flex-col gap-6 p-6 shadow-neon sm:flex-row"&gt;
       &lt;MediaImage src={person.imageUrl} alt={person.name} variant="person" className="h-64 w-44 shrink-0 self-center border-ds-accent/50 sm:self-start" /&gt;
       &lt;div className="flex-1 space-y-4"&gt;
         &lt;h1 className="font-display text-3xl font-bold tracking-tight text-ds-text sm:text-4xl"&gt;{person.name}&lt;/h1&gt;
+        &lt;ListMembershipBadges lists={person.lists} /&gt;
         &lt;PersonBioList person={person} /&gt;
-        &lt;a href={person.tvmazeUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 rounded text-sm font-semibold text-ds-accent underline underline-offset-4 hover:brightness-125 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ds-accent"&gt;
-          &lt;span&gt;{t('seriesViewOnTvmaze')}&lt;/span&gt;
-          &lt;ExternalLink className="h-3.5 w-3.5" aria-hidden="true" /&gt;
-        &lt;/a&gt;
+        &lt;div className="flex flex-wrap items-center gap-3"&gt;
+          {onManageLists ? (
+            &lt;NeonButton variant="secondary" onClick={onManageLists}&gt;
+              &lt;ListChecks className="h-4 w-4" aria-hidden="true" /&gt;
+              &lt;span&gt;{t('listManageAction')}&lt;/span&gt;
+            &lt;/NeonButton&gt;
+          ) : <span class="branch-1 cbranch-no" title="branch not covered" >null}</span>
+          &lt;a href={person.tvmazeUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 rounded text-sm font-semibold text-ds-accent underline underline-offset-4 hover:brightness-125 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ds-accent"&gt;
+            &lt;span&gt;{t('seriesViewOnTvmaze')}&lt;/span&gt;
+            &lt;ExternalLink className="h-3.5 w-3.5" aria-hidden="true" /&gt;
+          &lt;/a&gt;
+        &lt;/div&gt;
       &lt;/div&gt;
     &lt;/HudPanel&gt;
   );
@@ -150,7 +183,7 @@ export function PersonHeader({ person }: { person: PersonProfile }) {
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://vitest.dev/" target="_blank" rel="noopener noreferrer">Vitest</a>
-                at 2026-11-27T02:57:35.712Z
+                at 2026-11-28T01:12:13.065Z
             </div>
         <script src="../../../prettify.js"></script>
         <script>
