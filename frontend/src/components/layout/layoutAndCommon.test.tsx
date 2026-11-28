@@ -65,6 +65,6 @@ describe('Layout and common components (UT-13)', () => {
     const tvmazeLink = screen.getByRole('link', { name: 'TVmaze' });
     expect(tvmazeLink).toHaveAttribute('href', 'https://www.tvmaze.com');
     await user.click(screen.getByRole('button', { name: 'PT-BR' }));
-    expect(screen.getByRole('link', { name: 'Minha Lista' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Entrar' })).toBeInTheDocument();
   });
 });

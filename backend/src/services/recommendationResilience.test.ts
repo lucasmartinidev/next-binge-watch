@@ -15,6 +15,7 @@ describe('RecommendationService discovery degradation (UT-05 regression)', () =>
   it('serves watchlist picks when the TVmaze discovery catalog times out', async () => {
     const { watchlistRepo, episodeRepo } = createInMemoryRepositories();
     await watchlistRepo.upsert({
+      userId: '11111111-1111-1111-1111-111111111111',
       seriesId: 300,
       name: 'Queued Show',
       localizedNamePtBr: null,
@@ -26,7 +27,7 @@ describe('RecommendationService discovery degradation (UT-05 regression)', () =>
       tvmazeUrl: 'https://tvmaze.com/s/300',
     });
     const service = new RecommendationService(makeTimingOutTvmaze(), watchlistRepo, episodeRepo);
-    const result = await service.getNextBinge({ locale: 'en', excludeIds: [] });
+    const result = await service.getNextBinge({ locale: 'en', excludeIds: [], userId: '11111111-1111-1111-1111-111111111111' });
     expect(result.recommendation?.seriesId).toBe(300);
     expect(result.recommendation?.sourceTier).toBe('want_to_watch');
     expect(result.hasMore).toBe(false);

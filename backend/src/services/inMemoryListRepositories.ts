@@ -8,8 +8,8 @@ export function createInMemoryListRepositories(watchlistRepo: WatchlistRepositor
   userListRepo: UserListRepository;
   membershipRepo: ListMembershipRepository;
 } {
-  const seriesLinks = new Map<number, Set<string>>();
-  const peopleLinks = new Map<string, StoredCustomListPerson>();
+  const seriesLinks = new Map<string, Set<string>>();
+  const peopleLinks = new Map<string, StoredCustomListPerson & { userId: string }>();
   const userListRepo = new InMemoryUserListRepository(watchlistRepo, seriesLinks, peopleLinks);
   const membershipRepo = new InMemoryListMembershipRepository({ watchlistRepo, userListRepo, seriesLinks, peopleLinks });
   return {

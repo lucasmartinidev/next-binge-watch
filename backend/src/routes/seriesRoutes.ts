@@ -8,7 +8,7 @@ export function createSeriesRouter(seriesService: SeriesService): Router {
   router.get('/series/:id', async (req: Request, res: Response) => {
     const id = parsePositiveIntParam(req.params.id);
     const locale = extractRequestLocale(req);
-    const profile = await seriesService.getSeriesProfile({ id, locale });
+    const profile = await seriesService.getSeriesProfile({ id, locale, userId: req.auth?.user.id });
     res.json(profile);
   });
   return router;

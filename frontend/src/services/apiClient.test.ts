@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { ApiClientError } from '@/types/api';
-import { apiRequest } from './apiClient';
+import { apiRequest, isUnauthorizedError } from './apiClient';
 import { checkApiHealth } from './healthService';
 
 describe('apiClient and healthService', () => {
@@ -16,8 +16,10 @@ describe('apiClient and healthService', () => {
     expect(result).toEqual({ ok: true });
     expect(fetchSpy).toHaveBeenCalledWith(
       '/api/search?q=test&lang=pt-BR',
-      expect.objectContaining({ method: 'GET' }),
+      expect.objectContaining({ method: 'GET', credentials: 'include' }),
     );
+    expect(isUnauthorizedError(new ApiClientError(401, 'UNAUTHORIZED', 'no'))).toBe(true);
+    expect(isUnauthorizedError(new ApiClientError(403, 'FORBIDDEN', 'no'))).toBe(false);
   });
 
   it('throws ApiClientError with localized backend message on error responses', async () => {

@@ -1,4 +1,5 @@
 import type { TranslationDictionary } from './en';
+import { AUTH_PT_BR_DICTIONARY } from './authPtBR';
 import { LIST_PT_BR_DICTIONARY } from './listPtBR';
 
 export const PT_BR_DICTIONARY: TranslationDictionary = {
@@ -71,4 +72,5 @@ export const PT_BR_DICTIONARY: TranslationDictionary = {
   unknownValue: 'Não informado',
   genericError: 'Algo deu errado. Tente novamente.',
   ...LIST_PT_BR_DICTIONARY,
+  ...AUTH_PT_BR_DICTIONARY,
 };

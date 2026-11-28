@@ -9,9 +9,7 @@ const SHUTDOWN_DEADLINE_MS = 10_000;
 function registerShutdownHandlers(server: Server, db: DatabaseClient): void {
   let shuttingDown = false;
   async function shutdown(signal: string): Promise<void> {
-    if (shuttingDown) {
-      return;
-    }
+    if (shuttingDown) return;
     shuttingDown = true;
     logger.info('Shutdown signal received', { signal });
     const forceExitTimer = setTimeout(() => {
@@ -39,6 +37,12 @@ async function start(): Promise<void> {
     db,
     tvmazeBaseUrl: env.tvmazeBaseUrl,
     tvmazeTimeoutMs: env.tvmazeTimeoutMs,
+    auth: {
+      sessionTtlDays: env.auth.sessionTtlDays,
+      saltPepper: env.auth.saltPepper,
+      corsOrigins: env.auth.corsOrigins,
+      isProduction: env.auth.isProduction,
+    },
   });
   const server = app.listen(env.port, () => {
     logger.info('Backend server started', { port: env.port });

@@ -1,3 +1,4 @@
+import { AUTH_EN_DICTIONARY } from './authEn';
 import { LIST_EN_DICTIONARY } from './listEn';
 
 export const EN_DICTIONARY = {
@@ -70,6 +71,7 @@ export const EN_DICTIONARY = {
   unknownValue: 'Unknown',
   genericError: 'Something went wrong. Please try again.',
   ...LIST_EN_DICTIONARY,
+  ...AUTH_EN_DICTIONARY,
 };
 
 export type TranslationDictionary = typeof EN_DICTIONARY;

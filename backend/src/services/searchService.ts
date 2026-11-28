@@ -45,30 +45,30 @@ export class SearchService {
     private readonly membershipService?: ListMembershipService,
   ) {}
 
-  async search(input: { query: string; type: SearchScope; locale: Locale }): Promise<SearchResponse> {
+  async search(input: { query: string; type: SearchScope; locale: Locale; userId?: string }): Promise<SearchResponse> {
     const includeSeries = input.type === 'all' || input.type === 'series';
     const includePeople = input.type === 'all' || input.type === 'person';
     const [shows, people, akaBySeriesId] = await Promise.all([
       includeSeries ? this.tvmaze.searchShows(input.query) : Promise.resolve([]),
       includePeople ? this.tvmaze.searchPeople(input.query) : Promise.resolve([]),
-      input.locale === 'pt-BR' && includeSeries ? this.loadSavedAkas() : Promise.resolve(new Map()),
+      input.locale === 'pt-BR' && includeSeries && input.userId ? this.loadSavedAkas(input.userId) : Promise.resolve(new Map()),
     ]);
     const combined: ScoredResult[] = [
       ...shows.map((entry) => mapShowResult(entry, akaBySeriesId)),
       ...people.map((entry) => mapPersonResult(entry)),
     ];
     const sorted = [...combined].sort((a, b) => b.score - a.score).map((entry) => entry.item);
-    const items = await this.hydrateBadges(sorted, input.locale);
+    const items = await this.hydrateBadges(sorted, input.locale, input.userId);
     return { query: input.query, type: input.type, locale: input.locale, total: items.length, items };
   }
 
-  private async hydrateBadges(items: SearchResultItem[], locale: Locale): Promise<SearchResultItem[]> {
-    if (!this.membershipService || items.length === 0) return items;
+  private async hydrateBadges(items: SearchResultItem[], locale: Locale, userId?: string): Promise<SearchResultItem[]> {
+    if (!this.membershipService || !userId || items.length === 0) return items;
     const seriesIds = items.filter((i) => i.contentType === 'series').map((i) => i.id);
     const personIds = items.filter((i) => i.contentType === 'person').map((i) => i.id);
     const [seriesMap, personMap]: [Map<number, ListBadgeSummary[]>, Map<number, ListBadgeSummary[]>] = await Promise.all([
-      this.membershipService.getSeriesBadgesMap(seriesIds, locale),
-      this.membershipService.getPersonBadgesMap(personIds),
+      this.membershipService.getSeriesBadgesMap(userId, seriesIds, locale),
+      this.membershipService.getPersonBadgesMap(userId, personIds),
     ]);
     return items.map((item) => ({
       ...item,
@@ -76,8 +76,8 @@ export class SearchService {
     }));
   }
 
-  private async loadSavedAkas(): Promise<Map<number, string>> {
-    const saved = await this.watchlistRepo.listAll();
+  private async loadSavedAkas(userId: string): Promise<Map<number, string>> {
+    const saved = await this.watchlistRepo.listAll(userId);
     const map = new Map<number, string>();
     for (const row of saved) {
       if (row.localizedNamePtBr) map.set(row.seriesId, row.localizedNamePtBr);

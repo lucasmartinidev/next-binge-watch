@@ -18,19 +18,21 @@ export type ListMembershipServiceDeps = {
   tvmaze: TvmazeClient;
 };
 
-export type UpdateSeriesListsCommand = { seriesId: number; primaryStatus: WatchStatus | null; customListIds: string[]; locale: Locale };
+export type UpdateSeriesListsCommand = {
+  userId: string; seriesId: number; primaryStatus: WatchStatus | null; customListIds: string[]; locale: Locale;
+};
 export type UpdateSeriesListsResponse = { seriesId: number; tracking: SeriesTrackingState; lists: ListBadgeSummary[] };
-export type UpdatePersonListsCommand = { personId: number; customListIds: string[] };
+export type UpdatePersonListsCommand = { userId: string; personId: number; customListIds: string[] };
 
 export class ListMembershipService {
   constructor(private readonly deps: ListMembershipServiceDeps) {}
 
-  async getSeriesBadgesMap(seriesIds: number[], locale: Locale): Promise<Map<number, ListBadgeSummary[]>> {
+  async getSeriesBadgesMap(userId: string, seriesIds: number[], locale: Locale): Promise<Map<number, ListBadgeSummary[]>> {
     const result = new Map<number, ListBadgeSummary[]>();
     if (seriesIds.length === 0) return result;
     const [allLists, memberships] = await Promise.all([
-      this.deps.userListRepo.listAllWithCounts(),
-      this.deps.membershipRepo.findSeriesMemberships(seriesIds),
+      this.deps.userListRepo.listAllWithCounts(userId),
+      this.deps.membershipRepo.findSeriesMemberships(userId, seriesIds),
     ]);
     const systemByKey = new Map(allLists.filter((l) => l.isSystem && l.systemKey).map((l) => [l.systemKey!, l]));
     for (const seriesId of seriesIds) {
@@ -42,10 +44,10 @@ export class ListMembershipService {
     return result;
   }
 
-  async getPersonBadgesMap(personIds: number[]): Promise<Map<number, ListBadgeSummary[]>> {
+  async getPersonBadgesMap(userId: string, personIds: number[]): Promise<Map<number, ListBadgeSummary[]>> {
     const result = new Map<number, ListBadgeSummary[]>();
     if (personIds.length === 0) return result;
-    const memberships = await this.deps.membershipRepo.findPersonMemberships(personIds);
+    const memberships = await this.deps.membershipRepo.findPersonMemberships(userId, personIds);
     for (const personId of personIds) {
       result.set(personId, (memberships.get(personId) ?? []).map((list) => toListBadge(list, 'en')));
     }
@@ -53,19 +55,19 @@ export class ListMembershipService {
   }
 
   async updateSeriesLists(input: UpdateSeriesListsCommand): Promise<UpdateSeriesListsResponse> {
-    await this.validateTargetLists(input.customListIds, 'series');
+    await this.validateTargetLists(input.userId, input.customListIds, 'series');
     const [existingRow, watchedRows] = await Promise.all([
-      this.deps.watchlistRepo.findBySeriesId(input.seriesId),
-      this.deps.watchedEpisodeRepo.listBySeriesId(input.seriesId),
+      this.deps.watchlistRepo.findBySeriesId(input.userId, input.seriesId),
+      this.deps.watchedEpisodeRepo.listBySeriesId(input.userId, input.seriesId),
     ]);
     const targetStatus = this.resolveTargetStatus(input, existingRow?.status ?? null, watchedRows.length);
     const tracking = await commitSeriesLists(this.deps, { ...input, existingRow, targetStatus });
-    const badgesMap = await this.getSeriesBadgesMap([input.seriesId], input.locale);
+    const badgesMap = await this.getSeriesBadgesMap(input.userId, [input.seriesId], input.locale);
     return { seriesId: input.seriesId, tracking, lists: badgesMap.get(input.seriesId) ?? [] };
   }
 
   async updatePersonLists(input: UpdatePersonListsCommand): Promise<{ personId: number; lists: ListBadgeSummary[] }> {
-    await this.validateTargetLists(input.customListIds, 'person');
+    await this.validateTargetLists(input.userId, input.customListIds, 'person');
     const person = await this.deps.tvmaze.getPerson(input.personId);
     if (!person) throw new AppError('NOT_FOUND', 'person.notFound');
     const snapshot = {
@@ -74,15 +76,15 @@ export class ListMembershipService {
       country: person.country?.name ?? null, tvmazeUrl: person.url,
     };
     await this.deps.membershipRepo.runTransaction((dbClient) =>
-      this.deps.membershipRepo.replacePersonCustomLists({ person: snapshot, listIds: input.customListIds, dbClient }),
+      this.deps.membershipRepo.replacePersonCustomLists({ userId: input.userId, person: snapshot, listIds: input.customListIds, dbClient }),
     );
-    const badgesMap = await this.getPersonBadgesMap([input.personId]);
+    const badgesMap = await this.getPersonBadgesMap(input.userId, [input.personId]);
     return { personId: input.personId, lists: badgesMap.get(input.personId) ?? [] };
   }
 
-  private async validateTargetLists(listIds: string[], expectedType: ListEntityType): Promise<void> {
+  private async validateTargetLists(userId: string, listIds: string[], expectedType: ListEntityType): Promise<void> {
     for (const id of listIds) {
-      const list = await this.deps.userListRepo.findById(id);
+      const list = await this.deps.userListRepo.findById(userId, id);
       if (!list) throw new AppError('NOT_FOUND', 'lists.notFound');
       if (list.isSystem || list.entityType !== expectedType) throw new AppError('VALIDATION_ERROR', 'lists.crossTypeNotAllowed');
     }

@@ -1,14 +1,14 @@
 import { expect, test } from '@playwright/test';
-
-const BACKEND_URL = 'http://localhost:3051';
+import { BACKEND_URL, loginViaUi, signInApiAsAdmin } from './helpers/authHelper';
 
 test('E2E-02 & E2E-03: watchlist persistence, episode/season tracking, and Next Binge Watch recommendations', async ({
   page,
   request,
 }) => {
+  await signInApiAsAdmin(request);
   await request.delete(`${BACKEND_URL}/api/watchlist/169`).catch(() => {});
+  await loginViaUi(page);
 
-  await page.goto('/');
   await expect(page.getByRole('heading', { name: /Next Binge Watch/i }).first()).toBeVisible();
   const anotherBtn = page.getByRole('button', { name: /Show another/i });
   await anotherBtn.waitFor({ state: 'visible', timeout: 10_000 }).catch(() => {});

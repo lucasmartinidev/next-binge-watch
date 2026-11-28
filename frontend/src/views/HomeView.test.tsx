@@ -2,6 +2,7 @@ import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { AuthContext } from '@/hooks/authContextValue';
 import { I18nProvider } from '@/i18n/I18nContext';
 import { HomeView } from './HomeView';
 import * as recommendationService from '@/services/recommendationService';
@@ -118,11 +119,13 @@ describe('HomeView, Search, and Next Binge Watch (UT-11)', () => {
       });
 
     render(
-      <I18nProvider>
-        <MemoryRouter>
-          <HomeView />
-        </MemoryRouter>
-      </I18nProvider>,
+      <AuthContext.Provider value={{ user: { id: 'u1', username: 'viewer', email: 'v@e.com', role: 'USER', isActive: true, createdAt: '' }, loading: false, isAuthenticated: true, login: vi.fn(), loginAsDev: vi.fn(), logout: vi.fn(), refreshSession: vi.fn() }}>
+        <I18nProvider>
+          <MemoryRouter>
+            <HomeView />
+          </MemoryRouter>
+        </I18nProvider>
+      </AuthContext.Provider>,
     );
 
     expect(await screen.findByText('Top-rated series to start watching')).toBeInTheDocument();
@@ -159,11 +162,13 @@ describe('HomeView, Search, and Next Binge Watch (UT-11)', () => {
       .mockResolvedValueOnce({ query: 'lost', type: 'all', locale: 'en', total: 0, items: [] });
 
     render(
-      <I18nProvider>
-        <MemoryRouter>
-          <HomeView />
-        </MemoryRouter>
-      </I18nProvider>,
+      <AuthContext.Provider value={{ user: { id: 'u1', username: 'viewer', email: 'v@e.com', role: 'USER', isActive: true, createdAt: '' }, loading: false, isAuthenticated: true, login: vi.fn(), loginAsDev: vi.fn(), logout: vi.fn(), refreshSession: vi.fn() }}>
+        <I18nProvider>
+          <MemoryRouter>
+            <HomeView />
+          </MemoryRouter>
+        </I18nProvider>
+      </AuthContext.Provider>,
     );
 
     expect(await screen.findByText('Upstream busy')).toBeInTheDocument();

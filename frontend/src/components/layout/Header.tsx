@@ -1,6 +1,8 @@
 import { Tv } from 'lucide-react';
 import { Link, NavLink } from 'react-router-dom';
+import { useAuth } from '@/hooks/useAuth';
 import { useI18n } from '@/hooks/useI18n';
+import { AccountMenu } from './AccountMenu';
 import { LanguageSwitcher } from './LanguageSwitcher';
 
 function navLinkClass({ isActive }: { isActive: boolean }): string {
@@ -13,6 +15,7 @@ function navLinkClass({ isActive }: { isActive: boolean }): string {
 
 export function Header() {
   const { t } = useI18n();
+  const { isAuthenticated } = useAuth();
   return (
     <header className="sticky top-0 z-20 border-b border-ds-accent/25 bg-ds-void/80 backdrop-blur-lg">
       <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-4 py-3.5">
@@ -24,7 +27,8 @@ export function Header() {
         </Link>
         <nav aria-label="Main navigation" className="flex flex-wrap items-center gap-2">
           <NavLink to="/" end className={navLinkClass}>{t('navHome')}</NavLink>
-          <NavLink to="/watchlist" className={navLinkClass}>{t('navWatchlist')}</NavLink>
+          {isAuthenticated ? <NavLink to="/watchlist" className={navLinkClass}>{t('navWatchlist')}</NavLink> : null}
+          <AccountMenu />
           <LanguageSwitcher />
         </nav>
       </div>

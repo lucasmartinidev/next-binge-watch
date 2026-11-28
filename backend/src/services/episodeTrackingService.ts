@@ -8,6 +8,7 @@ import { buildTrackingState } from './seriesMapper';
 import { computeSyncedStatus } from './watchlistMapper';
 
 type EpisodeChangeInput = {
+  userId: string;
   show: TvmazeShow;
   allEpisodes: TvmazeEpisode[];
   targets: TvmazeEpisode[];
@@ -21,73 +22,67 @@ export class EpisodeTrackingService {
     private readonly watchedEpisodeRepo: WatchedEpisodeRepository,
   ) {}
 
-  async toggleEpisode(input: { seriesId: number; episodeId: number; watched: boolean }): Promise<SeriesTrackingState> {
+  async toggleEpisode(input: { userId: string; seriesId: number; episodeId: number; watched: boolean }): Promise<SeriesTrackingState> {
     const show = await this.requireShow(input.seriesId);
     const episodes = show._embedded?.episodes ?? [];
     const target = episodes.find((ep) => ep.id === input.episodeId);
-    if (!target) {
-      throw new AppError('NOT_FOUND', 'watchlist.episodeNotFound');
-    }
-    return this.applyEpisodeChange({ show, allEpisodes: episodes, targets: [target], watched: input.watched });
+    if (!target) throw new AppError('NOT_FOUND', 'watchlist.episodeNotFound');
+    return this.applyEpisodeChange({ userId: input.userId, show, allEpisodes: episodes, targets: [target], watched: input.watched });
   }
 
-  async toggleSeason(input: { seriesId: number; seasonNumber: number; watched: boolean }): Promise<SeriesTrackingState> {
+  async toggleSeason(input: { userId: string; seriesId: number; seasonNumber: number; watched: boolean }): Promise<SeriesTrackingState> {
     const show = await this.requireShow(input.seriesId);
     const episodes = show._embedded?.episodes ?? [];
     const seasonEpisodes = episodes.filter((ep) => ep.season === input.seasonNumber);
-    if (seasonEpisodes.length === 0) {
-      throw new AppError('NOT_FOUND', 'watchlist.seasonNotFound');
-    }
-    return this.applyEpisodeChange({ show, allEpisodes: episodes, targets: seasonEpisodes, watched: input.watched });
+    if (seasonEpisodes.length === 0) throw new AppError('NOT_FOUND', 'watchlist.seasonNotFound');
+    return this.applyEpisodeChange({ userId: input.userId, show, allEpisodes: episodes, targets: seasonEpisodes, watched: input.watched });
   }
 
   private async applyEpisodeChange(input: EpisodeChangeInput): Promise<SeriesTrackingState> {
-    const { show, allEpisodes, targets, watched } = input;
-    const saved = await this.ensureSavedIfWatched(show, allEpisodes.length, watched);
+    const { userId, show, allEpisodes, targets, watched } = input;
+    const saved = await this.ensureSavedIfWatched({ userId, show, totalEpisodes: allEpisodes.length, watched });
     if (watched) {
       await this.watchedEpisodeRepo.markEpisodes(
-        targets.map((ep) => ({ seriesId: show.id, episodeId: ep.id, seasonNumber: ep.season, episodeNumber: ep.number ?? 0 })),
+        targets.map((ep) => ({ userId, seriesId: show.id, episodeId: ep.id, seasonNumber: ep.season, episodeNumber: ep.number ?? 0 })),
       );
     } else {
-      await this.watchedEpisodeRepo.unmarkEpisodes(show.id, targets.map((ep) => ep.id));
+      await this.watchedEpisodeRepo.unmarkEpisodes(userId, show.id, targets.map((ep) => ep.id));
     }
-    const watchedRows = await this.watchedEpisodeRepo.listBySeriesId(show.id);
+    const watchedRows = await this.watchedEpisodeRepo.listBySeriesId(userId, show.id);
     const watchedIds = new Set(watchedRows.map((row) => row.episodeId));
     const nextStatus = saved ? computeSyncedStatus(saved.status, watchedIds.size, allEpisodes.length) : null;
     if (saved && nextStatus && nextStatus !== saved.status) {
-      await this.watchlistRepo.updateStatus(show.id, nextStatus);
+      await this.watchlistRepo.updateStatus({ userId, seriesId: show.id, status: nextStatus });
     }
     return buildTrackingState(allEpisodes, watchedIds, nextStatus);
   }
 
-  private async ensureSavedIfWatched(
-    show: TvmazeShow,
-    totalEpisodes: number,
-    watched: boolean,
-  ): Promise<StoredWatchlistRow | null> {
-    const existing = await this.watchlistRepo.findBySeriesId(show.id);
-    if (existing || !watched) {
-      return existing;
-    }
+  private async ensureSavedIfWatched(input: {
+    userId: string;
+    show: TvmazeShow;
+    totalEpisodes: number;
+    watched: boolean;
+  }): Promise<StoredWatchlistRow | null> {
+    const existing = await this.watchlistRepo.findBySeriesId(input.userId, input.show.id);
+    if (existing || !input.watched) return existing;
     await this.watchlistRepo.upsert({
-      seriesId: show.id,
-      name: show.name,
+      userId: input.userId,
+      seriesId: input.show.id,
+      name: input.show.name,
       localizedNamePtBr: null,
-      imageUrl: show.image?.medium ?? show.image?.original ?? null,
+      imageUrl: input.show.image?.medium ?? input.show.image?.original ?? null,
       status: 'watching',
-      genres: show.genres ?? [],
-      rating: show.rating?.average ?? null,
-      totalEpisodes,
-      tvmazeUrl: show.url,
+      genres: input.show.genres ?? [],
+      rating: input.show.rating?.average ?? null,
+      totalEpisodes: input.totalEpisodes,
+      tvmazeUrl: input.show.url,
     });
-    return this.watchlistRepo.findBySeriesId(show.id);
+    return this.watchlistRepo.findBySeriesId(input.userId, input.show.id);
   }
 
   private async requireShow(seriesId: number): Promise<TvmazeShow> {
     const show = await this.tvmaze.getShowWithEmbeds(seriesId);
-    if (!show) {
-      throw new AppError('NOT_FOUND', 'series.notFound');
-    }
+    if (!show) throw new AppError('NOT_FOUND', 'series.notFound');
     return show;
   }
 }

@@ -1,7 +1,8 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { AuthContext } from '@/hooks/authContextValue';
 import { I18nProvider } from '@/i18n/I18nContext';
 import * as seriesService from '@/services/seriesService';
 import * as watchlistService from '@/services/watchlistService';
@@ -12,8 +13,23 @@ vi.mock('@/services/preferencesService', () => ({
   updatePreferences: vi.fn().mockResolvedValue({ locale: 'pt-BR', updatedAt: null }),
 }));
 
+const MOCK_AUTH = {
+  user: { id: 'u1', username: 'viewer', email: 'v@e.com', role: 'USER' as const, isActive: true, createdAt: '' },
+  loading: false,
+  isAuthenticated: true,
+  login: vi.fn(),
+  loginAsDev: vi.fn(),
+  logout: vi.fn(),
+  refreshSession: vi.fn(),
+};
+
 describe('SeriesProfileView (UT-12)', () => {
+  beforeEach(() => {
+    window.localStorage.setItem('nbw_locale', 'pt-BR');
+  });
+
   afterEach(() => {
+    window.localStorage.clear();
     vi.restoreAllMocks();
   });
 
@@ -94,13 +110,15 @@ describe('SeriesProfileView (UT-12)', () => {
     const removeSpy = vi.spyOn(watchlistService, 'removeFromWatchlist').mockResolvedValue();
 
     render(
-      <I18nProvider>
-        <MemoryRouter initialEntries={['/series/169']}>
-          <Routes>
-            <Route path="/series/:id" element={<SeriesProfileView />} />
-          </Routes>
-        </MemoryRouter>
-      </I18nProvider>,
+      <AuthContext.Provider value={MOCK_AUTH}>
+        <I18nProvider>
+          <MemoryRouter initialEntries={['/series/169']}>
+            <Routes>
+              <Route path="/series/:id" element={<SeriesProfileView />} />
+            </Routes>
+          </MemoryRouter>
+        </I18nProvider>
+      </AuthContext.Provider>,
     );
 
     expect(await screen.findByRole('heading', { name: 'Breaking Bad: A Química do Mal' })).toBeInTheDocument();
@@ -144,11 +162,13 @@ describe('SeriesProfileView (UT-12)', () => {
     vi.spyOn(watchlistService, 'toggleEpisodeWatched').mockResolvedValue(afterToggle.tracking);
     const removeSpy = vi.spyOn(watchlistService, 'removeFromWatchlist').mockResolvedValue();
     render(
-      <I18nProvider>
-        <MemoryRouter initialEntries={['/series/169']}>
-          <Routes><Route path="/series/:id" element={<SeriesProfileView />} /></Routes>
-        </MemoryRouter>
-      </I18nProvider>,
+      <AuthContext.Provider value={MOCK_AUTH}>
+        <I18nProvider>
+          <MemoryRouter initialEntries={['/series/169']}>
+            <Routes><Route path="/series/:id" element={<SeriesProfileView />} /></Routes>
+          </MemoryRouter>
+        </I18nProvider>
+      </AuthContext.Provider>,
     );
     expect(await screen.findByRole('link', { name: 'Quero Assistir' })).toBeInTheDocument();
     await user.click(screen.getByRole('checkbox', { name: /S01E01/i }));

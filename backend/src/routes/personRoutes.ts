@@ -7,7 +7,7 @@ export function createPersonRouter(personService: PersonService): Router {
   const router = Router();
   router.get('/people/:id', async (req: Request, res: Response) => {
     const id = parsePositiveIntParam(req.params.id);
-    const profile = await personService.getPersonProfile(id, extractRequestLocale(req));
+    const profile = await personService.getPersonProfile(id, extractRequestLocale(req), req.auth?.user.id);
     res.json(profile);
   });
   return router;
