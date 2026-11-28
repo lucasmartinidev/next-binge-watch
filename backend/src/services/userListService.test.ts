@@ -6,6 +6,8 @@ import { ListMembershipService } from './listMembershipService';
 import { UserListService } from './userListService';
 import { WatchlistService } from './watchlistService';
 
+const USER_A = '11111111-1111-1111-1111-111111111111';
+
 describe('UserListService (UT-02)', () => {
   function setup() {
     const tvmaze = {
@@ -26,13 +28,13 @@ describe('UserListService (UT-02)', () => {
 
   it('protects primary lists from deletion or name/description/tags/type edits while allowing icon & color updates', async () => {
     const { userListService } = setup();
-    const { primaryLists } = await userListService.listAll({ locale: 'pt-BR' });
+    const { primaryLists } = await userListService.listAll({ userId: USER_A, locale: 'pt-BR' });
     expect(primaryLists.map((l) => l.name)).toEqual(['Quero Assistir', 'Assistindo', 'Assistida']);
-    await expect(userListService.deleteCustomList('want_to_watch')).rejects.toMatchObject({ statusCode: 403 });
+    await expect(userListService.deleteCustomList({ userId: USER_A, listId: 'want_to_watch' })).rejects.toMatchObject({ statusCode: 403 });
     await expect(
-      userListService.updateList({ listId: 'watching', patch: { name: 'Renamed' }, locale: 'en' }),
+      userListService.updateList({ userId: USER_A, listId: 'watching', patch: { name: 'Renamed' }, locale: 'en' }),
     ).rejects.toMatchObject({ statusCode: 403 });
-    const updated = await userListService.updateList({ listId: 'watching', patch: { icon: 'flame', color: 'pink' }, locale: 'en' });
+    const updated = await userListService.updateList({ userId: USER_A, listId: 'watching', patch: { icon: 'flame', color: 'pink' }, locale: 'en' });
     expect(updated.icon).toBe('flame');
     expect(updated.color).toBe('pink');
   });
@@ -40,35 +42,35 @@ describe('UserListService (UT-02)', () => {
   it('supports custom list CRUD, detail loading for primary/series/people, item removal, and safe deletion', async () => {
     const { userListService, membershipService } = setup();
     const sciFi = await userListService.createCustomList({
-      entityType: 'series', name: 'Weekend Sci-Fi', description: 'Space shows', icon: 'rocket', color: 'cyan', tags: ['sci-fi', 'weekend'], locale: 'en',
+      userId: USER_A, entityType: 'series', name: 'Weekend Sci-Fi', description: 'Space shows', icon: 'rocket', color: 'cyan', tags: ['sci-fi', 'weekend'], locale: 'en',
     });
     const people = await userListService.createCustomList({
-      entityType: 'person', name: 'Creators', icon: 'users', color: 'yellow', locale: 'en',
+      userId: USER_A, entityType: 'person', name: 'Creators', icon: 'users', color: 'yellow', locale: 'en',
     });
-    await expect(userListService.createCustomList({ entityType: 'series', name: 'weekend sci-fi', icon: 'tv', color: 'violet', locale: 'en' }))
+    await expect(userListService.createCustomList({ userId: USER_A, entityType: 'series', name: 'weekend sci-fi', icon: 'tv', color: 'violet', locale: 'en' }))
       .rejects.toMatchObject({ statusCode: 409 });
-    await expect(userListService.updateList({ listId: sciFi.id, patch: { entityType: 'person' }, locale: 'en' }))
+    await expect(userListService.updateList({ userId: USER_A, listId: sciFi.id, patch: { entityType: 'person' }, locale: 'en' }))
       .rejects.toMatchObject({ statusCode: 403 });
-    const edited = await userListService.updateList({ listId: sciFi.id, patch: { name: 'Sci-Fi Gold', tags: ['top'] }, locale: 'en' });
+    const edited = await userListService.updateList({ userId: USER_A, listId: sciFi.id, patch: { name: 'Sci-Fi Gold', tags: ['top'] }, locale: 'en' });
     expect(edited.name).toBe('Sci-Fi Gold');
 
-    await membershipService.updateSeriesLists({ seriesId: 169, primaryStatus: 'watching', customListIds: [sciFi.id], locale: 'en' });
-    await membershipService.updatePersonLists({ personId: 14229, customListIds: [people.id] });
+    await membershipService.updateSeriesLists({ userId: USER_A, seriesId: 169, primaryStatus: 'watching', customListIds: [sciFi.id], locale: 'en' });
+    await membershipService.updatePersonLists({ userId: USER_A, personId: 14229, customListIds: [people.id] });
 
-    const primaryDetail = await userListService.getDetail({ listId: 'watching', locale: 'en' });
+    const primaryDetail = await userListService.getDetail({ userId: USER_A, listId: 'watching', locale: 'en' });
     expect(primaryDetail.items).toHaveLength(1);
-    const seriesDetail = await userListService.getDetail({ listId: sciFi.id, locale: 'en' });
+    const seriesDetail = await userListService.getDetail({ userId: USER_A, listId: sciFi.id, locale: 'en' });
     expect(seriesDetail.items).toHaveLength(1);
-    const peopleDetail = await userListService.getDetail({ listId: people.id, locale: 'en' });
+    const peopleDetail = await userListService.getDetail({ userId: USER_A, listId: people.id, locale: 'en' });
     expect(peopleDetail.items).toHaveLength(1);
 
-    await userListService.removeItemFromCustomList({ listId: sciFi.id, itemId: 169 });
-    await userListService.removeItemFromCustomList({ listId: people.id, itemId: 14229 });
-    await expect(userListService.removeItemFromCustomList({ listId: people.id, itemId: 14229 })).rejects.toMatchObject({ statusCode: 404 });
+    await userListService.removeItemFromCustomList({ userId: USER_A, listId: sciFi.id, itemId: 169 });
+    await userListService.removeItemFromCustomList({ userId: USER_A, listId: people.id, itemId: 14229 });
+    await expect(userListService.removeItemFromCustomList({ userId: USER_A, listId: people.id, itemId: 14229 })).rejects.toMatchObject({ statusCode: 404 });
 
-    const filtered = await userListService.listAll({ type: 'series', tag: 'TOP', locale: 'en' });
+    const filtered = await userListService.listAll({ userId: USER_A, type: 'series', tag: 'TOP', locale: 'en' });
     expect(filtered.customLists).toHaveLength(1);
-    await userListService.deleteCustomList(sciFi.id);
-    await expect(userListService.getDetail({ listId: 'missing', locale: 'en' })).rejects.toMatchObject({ statusCode: 404 });
+    await userListService.deleteCustomList({ userId: USER_A, listId: sciFi.id });
+    await expect(userListService.getDetail({ userId: USER_A, listId: 'missing', locale: 'en' })).rejects.toMatchObject({ statusCode: 404 });
   });
 });

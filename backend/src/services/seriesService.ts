@@ -24,17 +24,17 @@ export class SeriesService {
     return this;
   }
 
-  async getSeriesProfile(input: { id: number; locale: Locale }): Promise<SeriesProfile> {
+  async getSeriesProfile(input: { id: number; locale: Locale; userId?: string }): Promise<SeriesProfile> {
     const show = await this.tvmaze.getShowWithEmbeds(input.id);
-    if (!show) {
-      throw new AppError('NOT_FOUND', 'series.notFound');
-    }
+    if (!show) throw new AppError('NOT_FOUND', 'series.notFound');
     const [crewResult, akasResult, savedItem, watchedList, badgesMap] = await Promise.all([
       this.safeLoadCrew(input.id),
       this.safeLoadAkas(input.id, input.locale),
-      this.watchlistRepo.findBySeriesId(input.id),
-      this.watchedEpisodeRepo.listBySeriesId(input.id),
-      this.membershipService ? this.membershipService.getSeriesBadgesMap([input.id], input.locale) : Promise.resolve(new Map()),
+      input.userId ? this.watchlistRepo.findBySeriesId(input.userId, input.id) : Promise.resolve(null),
+      input.userId ? this.watchedEpisodeRepo.listBySeriesId(input.userId, input.id) : Promise.resolve([]),
+      input.userId && this.membershipService
+        ? this.membershipService.getSeriesBadgesMap(input.userId, [input.id], input.locale)
+        : Promise.resolve(new Map()),
     ]);
     return buildSeriesProfile({
       show,
@@ -56,13 +56,8 @@ export class SeriesService {
     }
   }
 
-  private async safeLoadAkas(
-    id: number,
-    locale: Locale,
-  ): Promise<{ akas: TvmazeAka[] | null; failed: boolean }> {
-    if (locale !== 'pt-BR') {
-      return { akas: [], failed: false };
-    }
+  private async safeLoadAkas(id: number, locale: Locale): Promise<{ akas: TvmazeAka[] | null; failed: boolean }> {
+    if (locale !== 'pt-BR') return { akas: [], failed: false };
     try {
       return { akas: await this.tvmaze.getShowAkas(id), failed: false };
     } catch (error: unknown) {

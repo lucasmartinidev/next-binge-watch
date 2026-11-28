@@ -5,12 +5,13 @@ import type { StoredWatchlistRow, WatchlistRepository } from '../data/watchlistR
 import type { Locale } from '../types/locale';
 import type { NextBingeRecommendation, NextBingeResponse } from '../types/recommendation';
 import { stripHtml } from './htmlSanitizer';
-import { extractPreferredGenres, rankDiscoveryShows } from './recommendationDiscovery';
 import type { ListMembershipService } from './listMembershipService';
+import { extractPreferredGenres, rankDiscoveryShows } from './recommendationDiscovery';
 import { buildWantToWatchPicks, toWatchingPick } from './recommendationPicks';
 import { findNextEpisode } from './watchlistMapper';
 
 type RecommendationContext = {
+  userId?: string;
   saved: StoredWatchlistRow[];
   excludeSet: Set<number>;
   locale: Locale;
@@ -30,23 +31,22 @@ export class RecommendationService {
     return this;
   }
 
-  async getNextBinge(input: { locale: Locale; excludeIds: number[] }): Promise<NextBingeResponse> {
-    const saved = await this.watchlistRepo.listAll();
-    const context: RecommendationContext = { saved, excludeSet: new Set(input.excludeIds), locale: input.locale };
-    const watchlistPicks = [
-      ...(await this.buildWatchingPicks(context)),
-      ...buildWantToWatchPicks(saved, context.excludeSet, input.locale),
-    ];
+  async getNextBinge(input: { locale: Locale; excludeIds: number[]; userId?: string }): Promise<NextBingeResponse> {
+    const saved = input.userId ? await this.watchlistRepo.listAll(input.userId) : [];
+    const context: RecommendationContext = { userId: input.userId, saved, excludeSet: new Set(input.excludeIds), locale: input.locale };
+    const watchlistPicks = input.userId
+      ? [...(await this.buildWatchingPicks(context)), ...buildWantToWatchPicks(saved, context.excludeSet, input.locale)]
+      : [];
     const discoveryPicks = await this.loadDiscoveryPicks(context, watchlistPicks.length > 0);
     const candidates = [...watchlistPicks, ...discoveryPicks];
     const top = candidates[0] ?? null;
-    const recommendation = top ? await this.attachBadges(top, input.locale) : null;
+    const recommendation = top ? await this.attachBadges(top, input.locale, input.userId) : null;
     return { locale: input.locale, recommendation, hasMore: candidates.length > 1 };
   }
 
-  private async attachBadges(pick: NextBingeRecommendation, locale: Locale): Promise<NextBingeRecommendation> {
-    if (!this.membershipService) return pick;
-    const badgesMap = await this.membershipService.getSeriesBadgesMap([pick.seriesId], locale);
+  private async attachBadges(pick: NextBingeRecommendation, locale: Locale, userId?: string): Promise<NextBingeRecommendation> {
+    if (!this.membershipService || !userId) return pick;
+    const badgesMap = await this.membershipService.getSeriesBadgesMap(userId, [pick.seriesId], locale);
     return { ...pick, lists: badgesMap.get(pick.seriesId) ?? [] };
   }
 
@@ -54,29 +54,22 @@ export class RecommendationService {
     const watching = context.saved.filter((row) => row.status === 'watching' && !context.excludeSet.has(row.seriesId));
     const picks: NextBingeRecommendation[] = [];
     for (const row of watching) {
-      const pick = await this.buildWatchingPick(row, context.locale);
-      if (pick) {
-        picks.push(pick);
-      }
+      const pick = await this.buildWatchingPick(row, context.locale, context.userId!);
+      if (pick) picks.push(pick);
     }
     return picks;
   }
 
-  private async buildWatchingPick(row: StoredWatchlistRow, locale: Locale): Promise<NextBingeRecommendation | null> {
+  private async buildWatchingPick(row: StoredWatchlistRow, locale: Locale, userId: string): Promise<NextBingeRecommendation | null> {
     const show = await this.tvmaze.getShowWithEmbeds(row.seriesId).catch(() => null);
-    if (!show) {
-      return null;
-    }
-    const watchedRows = await this.watchedEpisodeRepo.listBySeriesId(row.seriesId);
+    if (!show) return null;
+    const watchedRows = await this.watchedEpisodeRepo.listBySeriesId(userId, row.seriesId);
     const watchedIds = new Set(watchedRows.map((watchedRow) => watchedRow.episodeId));
     const nextEpisode = findNextEpisode(show._embedded?.episodes ?? [], watchedIds);
     return nextEpisode ? toWatchingPick({ row, summary: stripHtml(show.summary), nextEpisode, locale }) : null;
   }
 
-  private async loadDiscoveryPicks(
-    context: RecommendationContext,
-    hasFallback: boolean,
-  ): Promise<NextBingeRecommendation[]> {
+  private async loadDiscoveryPicks(context: RecommendationContext, hasFallback: boolean): Promise<NextBingeRecommendation[]> {
     try {
       const catalog = await this.tvmaze.getShowsPage(0);
       return rankDiscoveryShows({
@@ -87,9 +80,7 @@ export class RecommendationService {
         locale: context.locale,
       });
     } catch (error: unknown) {
-      if (!hasFallback) {
-        throw error;
-      }
+      if (!hasFallback) throw error;
       logger.warn('Discovery catalog unavailable; serving watchlist picks only', { error: String(error) });
       return [];
     }

@@ -3,6 +3,7 @@ import type { Locale } from '@/types/locale';
 
 const BASE_URL = (import.meta.env.VITE_API_URL ?? '').replace(/\/+$/, '');
 const HTTP_NO_CONTENT = 204;
+const HTTP_UNAUTHORIZED = 401;
 
 type RequestOptions = {
   method?: 'GET' | 'POST' | 'PATCH' | 'PUT' | 'DELETE';
@@ -28,6 +29,10 @@ async function parseError(response: Response): Promise<ApiClientError> {
   return new ApiClientError(response.status, 'INTERNAL_ERROR', `HTTP ${response.status}`);
 }
 
+export function isUnauthorizedError(error: unknown): boolean {
+  return error instanceof ApiClientError && error.status === HTTP_UNAUTHORIZED;
+}
+
 export async function apiRequest<T>(path: string, options: RequestOptions = {}): Promise<T> {
   const url = buildUrl(path, options.locale);
   const headers: Record<string, string> = { Accept: 'application/json' };
@@ -37,6 +42,7 @@ export async function apiRequest<T>(path: string, options: RequestOptions = {}):
   const response = await fetch(url, {
     method: options.method ?? 'GET',
     headers,
+    credentials: 'include',
     body: options.body !== undefined ? JSON.stringify(options.body) : undefined,
     signal: options.signal,
   });

@@ -7,6 +7,7 @@ services:
       POSTGRES_USER: ${POSTGRES_USER:-postgres}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
       POSTGRES_DB: ${POSTGRES_DB:-next_binge_watch}
+      POSTGRES_TEST_DB: ${POSTGRES_TEST_DB:-next_binge_watch_test}
     ports:
       - "${POSTGRES_PORT:-5432}:5432"
     volumes:

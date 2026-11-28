@@ -5,11 +5,11 @@ import type { UserPreferences } from '../types/preferences';
 export class PreferencesService {
   constructor(private readonly preferencesRepo: PreferencesRepository) {}
 
-  async getPreferences(): Promise<UserPreferences> {
-    return this.preferencesRepo.getPreferences();
+  async getPreferences(userId: string): Promise<UserPreferences> {
+    return this.preferencesRepo.getPreferences(userId);
   }
 
-  async updatePreferences(input: { locale: Locale }): Promise<UserPreferences> {
-    return this.preferencesRepo.setLocale(input.locale);
+  async updatePreferences(input: { userId: string; locale: Locale }): Promise<UserPreferences> {
+    return this.preferencesRepo.setLocale(input.userId, input.locale);
   }
 }

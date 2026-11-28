@@ -1,1 +1,0 @@
-CREATE DATABASE next_binge_watch_test;

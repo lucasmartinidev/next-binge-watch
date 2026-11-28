@@ -34,30 +34,30 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">76.92% </span>
+                <span class="strong">78.12% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>20/26</span>
+                <span class='fraction'>25/32</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">66.66% </span>
+                <span class="strong">70% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>12/18</span>
+                <span class='fraction'>14/20</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">66.66% </span>
+                <span class="strong">70.58% </span>
                 <span class="quiet">Functions</span>
-                <span class='fraction'>8/12</span>
+                <span class='fraction'>12/17</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">84.21% </span>
+                <span class="strong">88.88% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>16/19</span>
+                <span class='fraction'>16/18</span>
             </div>
         
             
@@ -119,9 +119,8 @@
 <a name='L43'></a><a href='#L43'>43</a>
 <a name='L44'></a><a href='#L44'>44</a>
 <a name='L45'></a><a href='#L45'>45</a>
-<a name='L46'></a><a href='#L46'>46</a>
-<a name='L47'></a><a href='#L47'>47</a>
-<a name='L48'></a><a href='#L48'>48</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<a name='L46'></a><a href='#L46'>46</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -147,11 +146,8 @@
 <span class="cline-any cline-yes">14x</span>
 <span class="cline-any cline-yes">14x</span>
 <span class="cline-any cline-yes">14x</span>
-<span class="cline-any cline-yes">2x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">14x</span>
 <span class="cline-any cline-yes">12x</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">12x</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -181,6 +177,7 @@ import { SeriesHeader } from '@/components/series/SeriesHeader';
 import { usePageGenreTheme } from '@/hooks/useGenreTheme';
 import { useI18n } from '@/hooks/useI18n';
 import { useLists } from '@/hooks/useLists';
+import { useRequireAuthAction } from '@/hooks/useRequireAuthAction';
 import { useSeriesProfile } from '@/hooks/useSeriesProfile';
 import { updateSeriesLists } from '@/services/listService';
 import { resolveGenreTheme } from '@/styles/genreThemes';
@@ -188,17 +185,14 @@ import { resolveGenreTheme } from '@/styles/genreThemes';
 export function SeriesProfileView() {
   const { id } = useParams();
   const { locale, t } = useI18n();
+  const { isAuthenticated, requireSignIn } = useRequireAuthAction();
   const { profile, loading, error, retry, setWatchStatus, remove, toggleEpisode, toggleSeason } = useSeriesProfile(Number(id));
   const [manageOpen, setManageOpen] = useState(false);
   const [untrackOpen, setUntrackOpen] = useState(false);
-  const { lists } = useLists({ enabled: Boolean(profile) });
+  const { lists } = useLists({ enabled: Boolean(profile) &amp;&amp; isAuthenticated });
   usePageGenreTheme(resolveGenreTheme(profile?.genres ?? []));
-  if (loading) {
-    return &lt;LoadingState /&gt;;
-  }
-  <span class="missing-if-branch" title="if path not taken" >I</span>if (error || !profile) {
-<span class="cstat-no" title="statement not covered" >    return &lt;ErrorState message={error ?? t('genericError')} onRetry={retry} /&gt;;</span>
-  }
+  if (loading) return &lt;LoadingState /&gt;;
+  <span class="missing-if-branch" title="if path not taken" >I</span>if (error || !profile) <span class="cstat-no" title="statement not covered" >return &lt;ErrorState message={error ?? t('genericError')} onRetry={retry} /&gt;;</span>
   const handleSaveLists = <span class="fstat-no" title="function not covered" >async (p</span>ayload: ListMembershipSavePayload) =&gt; {
 <span class="cstat-no" title="statement not covered" >    await updateSeriesLists(profile.id, payload, locale);</span>
 <span class="cstat-no" title="statement not covered" >    retry();</span>
@@ -206,10 +200,10 @@ export function SeriesProfileView() {
   return (
     &lt;div className="space-y-8"&gt;
       {profile.partialData ? &lt;p role="status" className="rounded-control border border-amber-400/40 bg-amber-500/10 px-4 py-2 text-xs font-medium text-amber-200 backdrop-blur-md"&gt;{t('seriesPartialWarning')}&lt;/p&gt; : <span class="branch-1 cbranch-no" title="branch not covered" >null}</span>
-      &lt;SeriesHeader series={profile} onSelectStatus={(s) =&gt; void setWatchStatus(s)} onRemove={() =&gt; (profile.lists?.some((l) =&gt; !l.isSystem) ? setUntrackOpen(true) : void remove())} onManageLists={<span class="fstat-no" title="function not covered" >() =&gt; <span class="cstat-no" title="statement not covered" >s</span>etManageOpen(true)} /</span>&gt;
+      &lt;SeriesHeader series={profile} onSelectStatus={(s) =&gt; requireSignIn(() =&gt; void setWatchStatus(s))} onRemove={() =&gt; requireSignIn(() =&gt; (profile.lists?.some((l) =&gt; !l.isSystem) ? setUntrackOpen(true) : void remove()))} onManageLists={<span class="fstat-no" title="function not covered" >() =&gt; <span class="cstat-no" title="statement not covered" >r</span>equireSignIn(<span class="fstat-no" title="function not covered" >() =&gt; <span class="cstat-no" title="statement not covered" >s</span>etManageOpen(true))</span>} /</span>&gt;
       &lt;CastGrid cast={profile.cast} /&gt;
       &lt;CrewGrid crew={profile.crew} /&gt;
-      &lt;SeasonEpisodeList seasons={profile.seasons} onToggleEpisode={(epId, w) =&gt; void toggleEpisode(epId, w)} onToggleSeason={(sn, w) =&gt; void toggleSeason(sn, w)} /&gt;
+      &lt;SeasonEpisodeList seasons={profile.seasons} onToggleEpisode={(epId, w) =&gt; requireSignIn(() =&gt; void toggleEpisode(epId, w))} onToggleSeason={(sn, w) =&gt; requireSignIn(() =&gt; void toggleSeason(sn, w))} /&gt;
       &lt;ListMembershipModal isOpen={manageOpen} entityType="series" entityTitle={profile.localizedName ?? <span class="branch-1 cbranch-no" title="branch not covered" >profile.name} a</span>llLists={lists} currentListIds={(profile.lists ?? <span class="branch-1 cbranch-no" title="branch not covered" >[]).m</span>ap((l) =&gt; l.id)} onClose={<span class="fstat-no" title="function not covered" >() =&gt; <span class="cstat-no" title="statement not covered" >s</span>etManageOpen(false)} o</span>nSave={handleSaveLists} /&gt;
       &lt;ConfirmDialog isOpen={untrackOpen} title={t('listUntrackConfirmTitle')} description={t('listUntrackConfirmBody')} onCancel={<span class="fstat-no" title="function not covered" >() =&gt; <span class="cstat-no" title="statement not covered" >s</span>etUntrackOpen(false)} o</span>nConfirm={() =&gt; { setUntrackOpen(false); void remove(); }} /&gt;
     &lt;/div&gt;
@@ -222,7 +216,7 @@ export function SeriesProfileView() {
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://vitest.dev/" target="_blank" rel="noopener noreferrer">Vitest</a>
-                at 2026-11-28T01:12:13.065Z
+                at 2026-11-28T17:04:48.000Z
             </div>
         <script src="../../prettify.js"></script>
         <script>

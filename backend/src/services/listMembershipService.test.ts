@@ -6,6 +6,8 @@ import { ListMembershipService } from './listMembershipService';
 import { UserListService } from './userListService';
 import { WatchlistService } from './watchlistService';
 
+const USER_A = '11111111-1111-1111-1111-111111111111';
+
 describe('ListMembershipService (UT-03)', () => {
   function setup() {
     const tvmaze = {
@@ -28,27 +30,27 @@ describe('ListMembershipService (UT-03)', () => {
 
   it('enforces FR10 invariant, orders primary badge first, clears on untrack, and rejects cross-type', async () => {
     const { membershipService, userListService } = setup();
-    const seriesListA = await userListService.createCustomList({ entityType: 'series', name: 'Favorites', icon: 'star', color: 'violet', locale: 'en' });
-    const seriesListB = await userListService.createCustomList({ entityType: 'series', name: 'Weekend', icon: 'flame', color: 'orange', locale: 'en' });
-    const peopleList = await userListService.createCustomList({ entityType: 'person', name: 'Directors', icon: 'users', color: 'yellow', locale: 'en' });
+    const seriesListA = await userListService.createCustomList({ userId: USER_A, entityType: 'series', name: 'Favorites', icon: 'star', color: 'violet', locale: 'en' });
+    const seriesListB = await userListService.createCustomList({ userId: USER_A, entityType: 'series', name: 'Weekend', icon: 'flame', color: 'orange', locale: 'en' });
+    const peopleList = await userListService.createCustomList({ userId: USER_A, entityType: 'person', name: 'Directors', icon: 'users', color: 'yellow', locale: 'en' });
 
     await expect(
-      membershipService.updateSeriesLists({ seriesId: 169, primaryStatus: 'want_to_watch', customListIds: [peopleList.id], locale: 'en' }),
+      membershipService.updateSeriesLists({ userId: USER_A, seriesId: 169, primaryStatus: 'want_to_watch', customListIds: [peopleList.id], locale: 'en' }),
     ).rejects.toMatchObject({ statusCode: 400 });
 
     const first = await membershipService.updateSeriesLists({
-      seriesId: 169, primaryStatus: null, customListIds: [seriesListA.id, seriesListB.id], locale: 'en',
+      userId: USER_A, seriesId: 169, primaryStatus: null, customListIds: [seriesListA.id, seriesListB.id], locale: 'en',
     });
     expect(first.tracking.status).toBe('want_to_watch');
-    expect(first.lists.map((b) => b.id)).toEqual(['want_to_watch', seriesListA.id, seriesListB.id]);
+    expect(first.lists.map((b) => b.id)).toEqual([`${USER_A}:want_to_watch`, seriesListA.id, seriesListB.id]);
 
     const cleared = await membershipService.updateSeriesLists({
-      seriesId: 169, primaryStatus: null, customListIds: [], locale: 'en',
+      userId: USER_A, seriesId: 169, primaryStatus: null, customListIds: [], locale: 'en',
     });
     expect(cleared.tracking.inWatchlist).toBe(false);
     expect(cleared.lists).toEqual([]);
 
-    const personUpdated = await membershipService.updatePersonLists({ personId: 14229, customListIds: [peopleList.id] });
+    const personUpdated = await membershipService.updatePersonLists({ userId: USER_A, personId: 14229, customListIds: [peopleList.id] });
     expect(personUpdated.lists.map((b) => b.name)).toEqual(['Directors']);
   });
 });

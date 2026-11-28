@@ -1,4 +1,7 @@
-import 'dotenv/config';
+import { loadAuthConfig, type AuthConfig } from './authConfig';
+import { expandEnvValue, loadDotenv } from './envLoader';
+
+loadDotenv();
 
 const DEFAULT_PORT = 3000;
 const DEFAULT_TVMAZE_BASE_URL = 'https://api.tvmaze.com';
@@ -6,18 +9,18 @@ const DEFAULT_TVMAZE_TIMEOUT_MS = 5000;
 const MIN_PORT = 1;
 const MAX_PORT = 65535;
 const POSTGRES_PROTOCOLS = new Set(['postgres:', 'postgresql:']);
+const UNEXPANDED_VAR_PATTERN = /\$(?:\{[A-Za-z_][A-Za-z0-9_]*\}|[A-Za-z_][A-Za-z0-9_]*)/;
 
 export type AppEnv = {
   port: number;
   databaseUrl: string;
   tvmazeBaseUrl: string;
   tvmazeTimeoutMs: number;
+  auth: AuthConfig;
 };
 
 function parsePositiveInteger(rawValue: string | undefined, fallback: number, name: string): number {
-  if (!rawValue) {
-    return fallback;
-  }
+  if (!rawValue) return fallback;
   const parsed = Number(rawValue);
   if (!Number.isInteger(parsed) || parsed <= 0) {
     throw new Error(`${name} must be a positive integer`);
@@ -26,20 +29,21 @@ function parsePositiveInteger(rawValue: string | undefined, fallback: number, na
 }
 
 function parseDatabaseUrl(rawValue: string | undefined): string {
-  const trimmed = rawValue?.trim() ?? '';
-  if (!trimmed) {
-    throw new Error('DATABASE_URL is required');
+  const expanded = expandEnvValue(rawValue?.trim() ?? '', process.env);
+  if (!expanded) throw new Error('DATABASE_URL is required');
+  if (UNEXPANDED_VAR_PATTERN.test(expanded)) {
+    throw new Error('DATABASE_URL contains unresolved environment variable references');
   }
   let parsed: URL;
   try {
-    parsed = new URL(trimmed);
+    parsed = new URL(expanded);
   } catch {
     throw new Error('DATABASE_URL must be a valid PostgreSQL connection URL');
   }
   if (!POSTGRES_PROTOCOLS.has(parsed.protocol)) {
     throw new Error('DATABASE_URL must use the postgres:// or postgresql:// protocol');
   }
-  return trimmed;
+  return expanded;
 }
 
 export function loadEnv(): AppEnv {
@@ -49,15 +53,7 @@ export function loadEnv(): AppEnv {
   }
   const databaseUrl = parseDatabaseUrl(process.env.DATABASE_URL);
   const tvmazeBaseUrl = (process.env.TVMAZE_BASE_URL?.trim() || DEFAULT_TVMAZE_BASE_URL).replace(/\/+$/, '');
-  const tvmazeTimeoutMs = parsePositiveInteger(
-    process.env.TVMAZE_TIMEOUT_MS,
-    DEFAULT_TVMAZE_TIMEOUT_MS,
-    'TVMAZE_TIMEOUT_MS',
-  );
-  return {
-    port,
-    databaseUrl,
-    tvmazeBaseUrl,
-    tvmazeTimeoutMs,
-  };
+  const tvmazeTimeoutMs = parsePositiveInteger(process.env.TVMAZE_TIMEOUT_MS, DEFAULT_TVMAZE_TIMEOUT_MS, 'TVMAZE_TIMEOUT_MS');
+  const auth = loadAuthConfig();
+  return { port, databaseUrl, tvmazeBaseUrl, tvmazeTimeoutMs, auth };
 }

@@ -41,13 +41,13 @@ function attachSeriesBadges(credits: PersonSeriesCredit[] | null, map: Map<numbe
 export class PersonService {
   constructor(private readonly tvmaze: TvmazeClient, private readonly membershipService?: ListMembershipService) {}
 
-  async getPersonProfile(id: number, locale: Locale = 'en'): Promise<PersonProfile> {
+  async getPersonProfile(id: number, locale: Locale = 'en', userId?: string): Promise<PersonProfile> {
     const person = await this.tvmaze.getPerson(id);
     if (!person) throw new AppError('NOT_FOUND', 'person.notFound');
     const [castResult, crewResult] = await Promise.all([this.safeLoadCastCredits(id), this.safeLoadCrewCredits(id)]);
     const rawCast = castResult.credits ? mapCastCredits(castResult.credits) : null;
     const rawCrew = crewResult.credits ? mapCrewCredits(crewResult.credits) : null;
-    const [personBadges, creditBadges] = await this.loadBadges({ personId: id, cast: rawCast, crew: rawCrew, locale });
+    const [personBadges, creditBadges] = await this.loadBadges({ personId: id, cast: rawCast, crew: rawCrew, locale, userId });
     return {
       id: person.id, name: person.name,
       imageUrl: person.image?.original ?? person.image?.medium ?? null,
@@ -61,13 +61,13 @@ export class PersonService {
   }
 
   private async loadBadges(input: {
-    personId: number; cast: PersonSeriesCredit[] | null; crew: PersonSeriesCredit[] | null; locale: Locale;
+    personId: number; cast: PersonSeriesCredit[] | null; crew: PersonSeriesCredit[] | null; locale: Locale; userId?: string;
   }): Promise<[Map<number, ListBadgeSummary[]>, Map<number, ListBadgeSummary[]>]> {
-    if (!this.membershipService) return [new Map(), new Map()];
+    if (!this.membershipService || !input.userId) return [new Map(), new Map()];
     const seriesIds = [...new Set([...(input.cast ?? []), ...(input.crew ?? [])].map((c) => c.seriesId))];
     return Promise.all([
-      this.membershipService.getPersonBadgesMap([input.personId]),
-      this.membershipService.getSeriesBadgesMap(seriesIds, input.locale),
+      this.membershipService.getPersonBadgesMap(input.userId, [input.personId]),
+      this.membershipService.getSeriesBadgesMap(input.userId, seriesIds, input.locale),
     ]);
   }
 

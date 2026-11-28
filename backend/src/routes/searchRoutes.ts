@@ -9,22 +9,14 @@ const VALID_SCOPES: readonly SearchScope[] = ['all', 'series', 'person'];
 
 function parseSearchQuery(raw: unknown): string {
   const query = typeof raw === 'string' ? raw.trim() : '';
-  if (query.length === 0) {
-    throw new AppError('VALIDATION_ERROR', 'search.queryRequired');
-  }
-  if (query.length > MAX_QUERY_LENGTH) {
-    throw new AppError('VALIDATION_ERROR', 'search.queryTooLong');
-  }
+  if (query.length === 0) throw new AppError('VALIDATION_ERROR', 'search.queryRequired');
+  if (query.length > MAX_QUERY_LENGTH) throw new AppError('VALIDATION_ERROR', 'search.queryTooLong');
   return query;
 }
 
 function parseSearchType(raw: unknown): SearchScope {
-  if (raw === undefined || raw === '') {
-    return 'all';
-  }
-  if (typeof raw === 'string' && VALID_SCOPES.includes(raw as SearchScope)) {
-    return raw as SearchScope;
-  }
+  if (raw === undefined || raw === '') return 'all';
+  if (typeof raw === 'string' && VALID_SCOPES.includes(raw as SearchScope)) return raw as SearchScope;
   throw new AppError('VALIDATION_ERROR', 'search.invalidType');
 }
 
@@ -34,7 +26,7 @@ export function createSearchRouter(searchService: SearchService): Router {
     const query = parseSearchQuery(req.query.q);
     const type = parseSearchType(req.query.type);
     const locale = extractRequestLocale(req);
-    const result = await searchService.search({ query, type, locale });
+    const result = await searchService.search({ query, type, locale, userId: req.auth?.user.id });
     res.json(result);
   });
   return router;

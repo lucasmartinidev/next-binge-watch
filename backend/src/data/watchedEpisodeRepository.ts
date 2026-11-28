@@ -3,6 +3,7 @@ import type { StoredWatchedEpisode } from './watchlistRepository';
 import { toIsoTimestamp } from './watchlistRowMapper';
 
 export type EpisodeMarkInput = {
+  userId: string;
   seriesId: number;
   episodeId: number;
   seasonNumber: number;
@@ -10,20 +11,20 @@ export type EpisodeMarkInput = {
 };
 
 const MARK_EPISODES_SQL = `INSERT INTO watched_episodes (
-  series_id, episode_id, season_number, episode_number, watched_at
+  user_id, series_id, episode_id, season_number, episode_number, watched_at
 )
-SELECT * FROM UNNEST($1::int[], $2::int[], $3::int[], $4::int[], $5::timestamptz[])
-ON CONFLICT (series_id, episode_id) DO NOTHING`;
+SELECT * FROM UNNEST($1::uuid[], $2::int[], $3::int[], $4::int[], $5::int[], $6::timestamptz[])
+ON CONFLICT (user_id, series_id, episode_id) DO NOTHING`;
 
 export class WatchedEpisodeRepository {
   constructor(private readonly db: DatabaseClient) {}
 
-  async listBySeriesId(seriesId: number): Promise<StoredWatchedEpisode[]> {
+  async listBySeriesId(userId: string, seriesId: number): Promise<StoredWatchedEpisode[]> {
     const result = await this.db.query(
       `SELECT series_id, episode_id, season_number, episode_number, watched_at
-       FROM watched_episodes WHERE series_id = $1
+       FROM watched_episodes WHERE user_id = $1 AND series_id = $2
        ORDER BY season_number ASC, episode_number ASC`,
-      [seriesId],
+      [userId, seriesId],
     );
     return result.rows.map((row) => ({
       seriesId: Number(row.series_id),
@@ -34,9 +35,10 @@ export class WatchedEpisodeRepository {
     }));
   }
 
-  async listAllCounts(): Promise<Map<number, number>> {
+  async listAllCounts(userId: string): Promise<Map<number, number>> {
     const result = await this.db.query(
-      'SELECT series_id, COUNT(*) AS watched_count FROM watched_episodes GROUP BY series_id',
+      'SELECT series_id, COUNT(*) AS watched_count FROM watched_episodes WHERE user_id = $1 GROUP BY series_id',
+      [userId],
     );
     const counts = new Map<number, number>();
     for (const row of result.rows) {
@@ -46,11 +48,10 @@ export class WatchedEpisodeRepository {
   }
 
   async markEpisodes(episodes: EpisodeMarkInput[]): Promise<void> {
-    if (episodes.length === 0) {
-      return;
-    }
+    if (episodes.length === 0) return;
     const now = new Date().toISOString();
     await this.db.query(MARK_EPISODES_SQL, [
+      episodes.map((ep) => ep.userId),
       episodes.map((ep) => ep.seriesId),
       episodes.map((ep) => ep.episodeId),
       episodes.map((ep) => ep.seasonNumber),
@@ -59,13 +60,11 @@ export class WatchedEpisodeRepository {
     ]);
   }
 
-  async unmarkEpisodes(seriesId: number, episodeIds: number[]): Promise<void> {
-    if (episodeIds.length === 0) {
-      return;
-    }
+  async unmarkEpisodes(userId: string, seriesId: number, episodeIds: number[]): Promise<void> {
+    if (episodeIds.length === 0) return;
     await this.db.query(
-      'DELETE FROM watched_episodes WHERE series_id = $1 AND episode_id = ANY($2::int[])',
-      [seriesId, episodeIds],
+      'DELETE FROM watched_episodes WHERE user_id = $1 AND series_id = $2 AND episode_id = ANY($3::int[])',
+      [userId, seriesId, episodeIds],
     );
   }
 }

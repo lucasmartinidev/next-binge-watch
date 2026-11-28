@@ -1,5 +1,6 @@
 export type ErrorCode =
   | 'VALIDATION_ERROR'
+  | 'UNAUTHORIZED'
   | 'FORBIDDEN'
   | 'NOT_FOUND'
   | 'CONFLICT'
@@ -39,6 +40,24 @@ export type MessageKey =
   | 'lists.itemNotFound'
   | 'preferences.invalidLocale'
   | 'recommendations.invalidExcludeIds'
+  | 'auth.unauthorized'
+  | 'auth.invalidCredentials'
+  | 'auth.accountDeactivated'
+  | 'auth.identifierRequired'
+  | 'auth.invalidPasswordHash'
+  | 'auth.invalidCurrentPassword'
+  | 'auth.passwordUnchanged'
+  | 'auth.forbidden'
+  | 'auth.devModeDisabled'
+  | 'users.notFound'
+  | 'users.invalidUsername'
+  | 'users.invalidEmail'
+  | 'users.invalidRole'
+  | 'users.usernameTaken'
+  | 'users.emailTaken'
+  | 'users.cannotModifySelf'
+  | 'users.lastAdminProtected'
+  | 'users.invalidUpdate'
   | 'upstream.rateLimited'
   | 'upstream.unavailable'
   | 'upstream.timeout'
@@ -53,6 +72,7 @@ export type ApiErrorResponse = {
 
 const ERROR_STATUS_BY_CODE: Record<ErrorCode, number> = {
   VALIDATION_ERROR: 400,
+  UNAUTHORIZED: 401,
   FORBIDDEN: 403,
   NOT_FOUND: 404,
   CONFLICT: 409,

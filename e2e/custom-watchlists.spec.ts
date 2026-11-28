@@ -1,23 +1,24 @@
 import { expect, test, type APIRequestContext } from '@playwright/test';
-
-const BACKEND_URL = 'http://localhost:3051';
+import { BACKEND_URL, loginViaUi, signInApiAsAdmin } from './helpers/authHelper';
 
 async function cleanupTestState(request: APIRequestContext) {
-  await request.delete(`${BACKEND_URL}/api/watchlist/169`).catch(() => {});
+  await signInApiAsAdmin(request);
+  await request.delete(`${BACKEND_URL}/api/watchlist/169`).catch(() => { });
   const res = await request.get(`${BACKEND_URL}/api/lists`);
   if (!res.ok()) {
     return;
   }
   const data = (await res.json()) as { customLists: Array<{ id: string }> };
   for (const list of data.customLists) {
-    await request.delete(`${BACKEND_URL}/api/lists/${list.id}`).catch(() => {});
+    await request.delete(`${BACKEND_URL}/api/lists/${list.id}`).catch(() => { });
   }
-  await request.put(`${BACKEND_URL}/api/preferences`, { data: { locale: 'en' } }).catch(() => {});
+  await request.put(`${BACKEND_URL}/api/preferences`, { data: { locale: 'en' } }).catch(() => { });
 }
 
 test.describe('Custom Watchlists & Ubiquitous Membership', () => {
-  test.beforeEach(async ({ request }) => {
+  test.beforeEach(async ({ page, request }) => {
     await cleanupTestState(request);
+    await loginViaUi(page);
   });
 
   test.afterAll(async ({ request }) => {

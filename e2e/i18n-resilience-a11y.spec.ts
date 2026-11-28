@@ -1,37 +1,28 @@
 import { expect, test } from '@playwright/test';
 
-const BACKEND_URL = 'http://localhost:3051';
-
-test('E2E-04: browser locale auto-detection, fallback, manual switch, and persistence', async ({
-  browser,
-  request,
-}) => {
+test('E2E-04: browser locale auto-detection, fallback, manual switch, and persistence', async ({ browser }) => {
   const ptContext = await browser.newContext({ locale: 'pt-BR' });
   const ptPage = await ptContext.newPage();
   await ptPage.goto('/');
-  await expect(ptPage.getByRole('link', { name: 'Minha Lista' })).toBeVisible();
+  await expect(ptPage.getByRole('link', { name: 'Entrar' })).toBeVisible();
   await ptContext.close();
 
   const frContext = await browser.newContext({ locale: 'fr-FR' });
   const frPage = await frContext.newPage();
   await frPage.goto('/');
-  await expect(frPage.getByRole('link', { name: 'Watchlist' })).toBeVisible();
+  await expect(frPage.getByRole('link', { name: 'Sign In' })).toBeVisible();
 
   await frPage.getByRole('button', { name: 'PT-BR' }).click();
-  await expect(frPage.getByRole('link', { name: 'Minha Lista' })).toBeVisible();
+  await expect(frPage.getByRole('link', { name: 'Entrar' })).toBeVisible();
   await frPage.reload();
-  await expect(frPage.getByRole('link', { name: 'Minha Lista' })).toBeVisible();
+  await expect(frPage.getByRole('link', { name: 'Entrar' })).toBeVisible();
 
   await frPage.goto('/series/999999999');
   await expect(frPage.getByRole('alert')).toContainText('Série não encontrada.');
-
-  await request.put(`${BACKEND_URL}/api/preferences`, { data: { locale: 'en' } });
   await frContext.close();
 });
 
-test('E2E-05: empty search, error recovery with retry, responsive layout, and keyboard navigation', async ({
-  page,
-}) => {
+test('E2E-05: empty search, error recovery with retry, responsive layout, and keyboard navigation', async ({ page }) => {
   await page.setViewportSize({ width: 375, height: 812 });
   await page.goto('/');
 
@@ -59,15 +50,11 @@ test('E2E-05: empty search, error recovery with retry, responsive layout, and ke
   await page.getByRole('button', { name: /Try again/i }).click();
   await expect(page.getByRole('link', { name: /Breaking Bad/i }).first()).toBeVisible({ timeout: 15_000 });
 
-  const mobileOverflow = await page.evaluate(
-    () => document.documentElement.scrollWidth > window.innerWidth,
-  );
+  const mobileOverflow = await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth);
   expect(mobileOverflow).toBe(false);
 
   await page.setViewportSize({ width: 1280, height: 800 });
-  const desktopOverflow = await page.evaluate(
-    () => document.documentElement.scrollWidth > window.innerWidth,
-  );
+  const desktopOverflow = await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth);
   expect(desktopOverflow).toBe(false);
 
   await page.keyboard.press('Tab');
