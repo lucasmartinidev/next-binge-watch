@@ -33,9 +33,11 @@ describe('PersonProfileView (UT-12)', () => {
           premieredYear: '2008',
           role: 'Walter White',
           creditType: 'cast',
+          lists: [{ id: 'p-watched', name: 'Watched', icon: 'check-circle', color: 'emerald', isSystem: true, systemKey: 'watched' }],
         },
       ],
       crewCredits: null,
+      lists: [{ id: 'c-actors', name: 'Top Actors', icon: 'users', color: 'pink', isSystem: false, systemKey: null }],
       partialData: true,
     });
 
@@ -56,6 +58,9 @@ describe('PersonProfileView (UT-12)', () => {
       'https://www.tvmaze.com/people/14229/bryan-cranston',
     );
     expect(screen.getByRole('link', { name: /breaking bad/i })).toHaveAttribute('href', '/series/169');
+    expect(screen.getByRole('link', { name: 'Top Actors' })).toHaveAttribute('href', '/watchlist/c-actors');
+    expect(screen.getByRole('link', { name: 'Watched' })).toHaveAttribute('href', '/watchlist/p-watched');
+    expect(screen.getByRole('button', { name: /manage lists/i })).toBeInTheDocument();
     expect(screen.getByRole('status')).toHaveTextContent(/some credits could not be loaded/i);
   });
 

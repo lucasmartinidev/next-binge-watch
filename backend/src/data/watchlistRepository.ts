@@ -1,3 +1,4 @@
+import type { PoolClient } from 'pg';
 import type { WatchStatus } from '../types/watchlist';
 import type { DatabaseClient } from './database';
 import { mapWatchlistRow } from './watchlistRowMapper';
@@ -56,25 +57,28 @@ export class WatchlistRepository {
     return first ? mapWatchlistRow(first as Record<string, unknown>) : null;
   }
 
-  async upsert(input: UpsertWatchlistInput): Promise<void> {
+  async upsert(input: UpsertWatchlistInput, dbClient?: PoolClient): Promise<void> {
+    const runner = dbClient ?? this.db;
     const now = new Date().toISOString();
-    await this.db.query(UPSERT_SQL, [
+    await runner.query(UPSERT_SQL, [
       input.seriesId, input.name, input.localizedNamePtBr, input.imageUrl,
       input.status, JSON.stringify(input.genres), input.rating,
       input.totalEpisodes, input.tvmazeUrl, now, now,
     ]);
   }
 
-  async updateStatus(seriesId: number, status: WatchStatus): Promise<boolean> {
-    const result = await this.db.query(
+  async updateStatus(seriesId: number, status: WatchStatus, dbClient?: PoolClient): Promise<boolean> {
+    const runner = dbClient ?? this.db;
+    const result = await runner.query(
       'UPDATE watchlist_items SET status = $1, updated_at = $2 WHERE series_id = $3',
       [status, new Date().toISOString(), seriesId],
     );
     return (result.rowCount ?? 0) > 0;
   }
 
-  async deleteBySeriesId(seriesId: number): Promise<boolean> {
-    const result = await this.db.query('DELETE FROM watchlist_items WHERE series_id = $1', [seriesId]);
+  async deleteBySeriesId(seriesId: number, dbClient?: PoolClient): Promise<boolean> {
+    const runner = dbClient ?? this.db;
+    const result = await runner.query('DELETE FROM watchlist_items WHERE series_id = $1', [seriesId]);
     return (result.rowCount ?? 0) > 0;
   }
 }

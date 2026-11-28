@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { I18nProvider } from '@/i18n/I18nContext';
+import * as listService from '@/services/listService';
 import * as watchlistService from '@/services/watchlistService';
 import { WatchlistView } from './WatchlistView';
 
@@ -37,6 +38,15 @@ describe('WatchlistView', () => {
       .spyOn(watchlistService, 'getWatchlist')
       .mockResolvedValueOnce({ total: 1, items: [item] })
       .mockResolvedValueOnce({ total: 0, items: [] });
+    vi.spyOn(listService, 'getLists').mockResolvedValue({
+      primaryLists: [
+        { id: 'p-watch', isSystem: true, systemKey: 'watching', entityType: 'series', name: 'Watching', description: null, icon: 'play', color: 'violet', tags: [], itemCount: 1, updatedAt: '' },
+      ],
+      customLists: [
+        { id: 'c-sci', isSystem: false, systemKey: null, entityType: 'series', name: 'Sci-Fi', description: 'Space', icon: 'rocket', color: 'cyan', tags: ['space'], itemCount: 1, updatedAt: '' },
+      ],
+      availableTags: ['space'],
+    });
     vi.spyOn(watchlistService, 'updateWatchStatus').mockResolvedValue({ ...item, status: 'watched' });
     const removeSpy = vi.spyOn(watchlistService, 'removeFromWatchlist').mockResolvedValue();
 
@@ -49,6 +59,8 @@ describe('WatchlistView', () => {
     );
 
     expect(await screen.findByText('Breaking Bad')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /watching/i })).toHaveAttribute('href', '/watchlist/p-watch');
+    expect(screen.getByRole('link', { name: /sci-fi/i })).toHaveAttribute('href', '/watchlist/c-sci');
     expect(screen.getAllByRole('link', { name: 'Breaking Bad' })).toHaveLength(2);
     expect(screen.getByText(/S01E02 · Cat/)).toBeInTheDocument();
 
@@ -63,6 +75,13 @@ describe('WatchlistView', () => {
 
   it('shows error state on load failure and retries', async () => {
     const user = userEvent.setup();
+    vi.spyOn(listService, 'getLists').mockResolvedValue({
+      primaryLists: [],
+      customLists: [
+        { id: 'c-sci', isSystem: false, systemKey: null, entityType: 'series', name: 'Sci-Fi', description: null, icon: 'rocket', color: 'cyan', tags: ['space'], itemCount: 1, updatedAt: '' },
+      ],
+      availableTags: ['space'],
+    });
     vi.spyOn(watchlistService, 'getWatchlist')
       .mockRejectedValueOnce(new Error('Watchlist failed'))
       .mockResolvedValueOnce({ total: 0, items: [] });

@@ -22,6 +22,7 @@ function mapSavedRow(row: StoredWatchlistRow, locale: Locale): SavedRowFields {
     rating: row.rating,
     genres: row.genres,
     inWatchlist: true,
+    lists: [],
     tvmazeUrl: row.tvmazeUrl,
   };
 }

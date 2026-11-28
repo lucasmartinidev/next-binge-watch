@@ -1,5 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import type { TvmazeClient } from '../data/tvmazeClient';
+import { createInMemoryListRepositories } from './inMemoryListRepositories';
+import { ListMembershipService } from './listMembershipService';
 import { PersonService } from './personService';
 
 describe('PersonService (UT-05)', () => {
@@ -46,5 +48,31 @@ describe('PersonService (UT-05)', () => {
       code: 'NOT_FOUND',
       statusCode: 404,
     });
+  });
+
+  it('hydrates person lists and credit series badges when membershipService is provided (UT-04)', async () => {
+    const tvmaze = {
+      getPerson: vi.fn().mockResolvedValue(samplePerson),
+      getPersonCastCredits: vi.fn().mockResolvedValue([
+        { _embedded: { show: { id: 169, name: 'Breaking Bad', url: 'https://tvmaze.com/s/169' }, character: { id: 1, name: 'Walter' } } },
+      ]),
+      getPersonCrewCredits: vi.fn().mockResolvedValue([]),
+    } as unknown as TvmazeClient;
+    const watchlistRepo = {
+      listAll: vi.fn().mockResolvedValue([]),
+      findBySeriesId: vi.fn().mockResolvedValue({ seriesId: 169, status: 'watched' }),
+    } as never;
+    const { userListRepo, membershipRepo } = createInMemoryListRepositories(watchlistRepo);
+    const membershipService = new ListMembershipService({
+      userListRepo,
+      membershipRepo,
+      watchlistRepo,
+      watchedEpisodeRepo: { listBySeriesId: vi.fn().mockResolvedValue([]) } as never,
+      tvmaze,
+    });
+    const service = new PersonService(tvmaze, membershipService);
+    const profile = await service.getPersonProfile(14229, 'pt-BR');
+    expect(profile.lists).toEqual([]);
+    expect(profile.castCredits?.[0].lists[0]).toMatchObject({ id: 'watched', name: 'Assistida' });
   });
 });

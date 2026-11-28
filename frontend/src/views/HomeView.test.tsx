@@ -55,6 +55,7 @@ describe('HomeView, Search, and Next Binge Watch (UT-11)', () => {
           inWatchlist: false,
           nextEpisode: null,
           tvmazeUrl: 'https://www.tvmaze.com/shows/82/game-of-thrones',
+          lists: [{ id: 'c-fav', name: 'Favorites', icon: 'star', color: 'amber', isSystem: false, systemKey: null }],
         },
       });
     const addSpy = vi.spyOn(watchlistService, 'addToWatchlist').mockResolvedValue({
@@ -130,6 +131,7 @@ describe('HomeView, Search, and Next Binge Watch (UT-11)', () => {
 
     await user.click(screen.getByRole('button', { name: /show another/i }));
     expect(await screen.findByText('Game of Thrones')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Favorites' })).toHaveAttribute('href', '/watchlist/c-fav');
 
     await user.click(screen.getByRole('button', { name: /^search$/i }));
     expect(screen.getByRole('alert')).toHaveTextContent(/enter at least 1 character/i);

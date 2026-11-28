@@ -1,3 +1,4 @@
+import type { ListBadgeSummary } from '../types/list';
 import type { SeriesProfile } from '../types/series';
 import type { TvmazeCrewMember, TvmazeShow } from '../types/tvmaze';
 import type { WatchStatus } from '../types/watchlist';
@@ -10,6 +11,7 @@ export type SeriesProfileInput = {
   localizedName: string | null;
   savedStatus: WatchStatus | null;
   watchedIds: Set<number>;
+  lists: ListBadgeSummary[];
   partialData: boolean;
 };
 
@@ -34,6 +36,7 @@ export function buildSeriesProfile(input: SeriesProfileInput): SeriesProfile {
     crew: input.crew ? mapCrew(input.crew) : null,
     seasons: groupSeasons(episodes, input.watchedIds),
     tracking: buildTrackingState(episodes, input.watchedIds, input.savedStatus),
+    lists: input.lists,
     partialData: input.partialData,
   };
 }

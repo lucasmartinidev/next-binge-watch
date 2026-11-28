@@ -1,3 +1,5 @@
+import { LIST_EN_DICTIONARY } from './listEn';
+
 export const EN_DICTIONARY = {
   appName: 'NEXT BINGE WATCH',
   navHome: 'Home',
@@ -67,6 +69,7 @@ export const EN_DICTIONARY = {
   personPartialWarning: 'Some credits could not be loaded.',
   unknownValue: 'Unknown',
   genericError: 'Something went wrong. Please try again.',
+  ...LIST_EN_DICTIONARY,
 };
 
 export type TranslationDictionary = typeof EN_DICTIONARY;

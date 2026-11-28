@@ -1,6 +1,8 @@
-import { ExternalLink } from 'lucide-react';
+import { ExternalLink, ListChecks } from 'lucide-react';
 import { MediaImage } from '@/components/common/MediaImage';
 import { HudPanel } from '@/components/ds/HudPanel';
+import { NeonButton } from '@/components/ds/NeonButton';
+import { ListMembershipBadges } from '@/components/lists/ListMembershipBadges';
 import { ProgressBar } from '@/components/watchlist/ProgressBar';
 import { useI18n } from '@/hooks/useI18n';
 import type { SeriesProfile } from '@/types/series';
@@ -12,9 +14,25 @@ type SeriesHeaderProps = {
   series: SeriesProfile;
   onSelectStatus: (status: WatchStatus) => void;
   onRemove: () => void;
+  onManageLists?: () => void;
 };
 
-export function SeriesHeader({ series, onSelectStatus, onRemove }: SeriesHeaderProps) {
+function SeriesHeaderActions({ series, onSelectStatus, onRemove, onManageLists }: SeriesHeaderProps) {
+  const { t } = useI18n();
+  return (
+    <div className="flex flex-wrap items-center gap-3">
+      <WatchlistControls tracking={series.tracking} onSelectStatus={onSelectStatus} onRemove={onRemove} />
+      {onManageLists ? (
+        <NeonButton variant="secondary" onClick={onManageLists}>
+          <ListChecks className="h-4 w-4" aria-hidden="true" />
+          <span>{t('listManageAction')}</span>
+        </NeonButton>
+      ) : null}
+    </div>
+  );
+}
+
+export function SeriesHeader({ series, onSelectStatus, onRemove, onManageLists }: SeriesHeaderProps) {
   const { t } = useI18n();
   const displayName = series.localizedName ?? series.name;
   return (
@@ -26,8 +44,9 @@ export function SeriesHeader({ series, onSelectStatus, onRemove }: SeriesHeaderP
           {series.localizedName && series.localizedName !== series.name && <p className="text-sm text-ds-muted">{t('seriesOriginalTitle')}: {series.name}</p>}
         </div>
         <SeriesMetaList series={series} />
+        <ListMembershipBadges lists={series.lists} />
         <p className="text-sm leading-relaxed text-ds-text/90">{series.summary ?? t('seriesNoSummary')}</p>
-        <WatchlistControls tracking={series.tracking} onSelectStatus={onSelectStatus} onRemove={onRemove} />
+        <SeriesHeaderActions series={series} onSelectStatus={onSelectStatus} onRemove={onRemove} onManageLists={onManageLists} />
         {series.tracking.totalEpisodes > 0 && <ProgressBar watched={series.tracking.watchedEpisodes} total={series.tracking.totalEpisodes} percent={series.tracking.progressPercent} />}
         <a href={series.tvmazeUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 rounded text-sm font-semibold text-ds-accent underline underline-offset-4 hover:brightness-125 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ds-accent">
           <span>{t('seriesViewOnTvmaze')}</span>
