@@ -1,6 +1,8 @@
 import { describe, expect, it, vi } from 'vitest';
 import type { TvmazeClient } from '../data/tvmazeClient';
 import type { WatchlistRepository } from '../data/watchlistRepository';
+import { createInMemoryListRepositories } from './inMemoryListRepositories';
+import { ListMembershipService } from './listMembershipService';
 import { SearchService } from './searchService';
 
 describe('SearchService (UT-03)', () => {
@@ -66,5 +68,24 @@ describe('SearchService (UT-03)', () => {
     const personOnly = await service.search({ query: 'bryan', type: 'person', locale: 'en' });
     expect(personOnly.items).toHaveLength(1);
     expect(personOnly.items[0].contentType).toBe('person');
+  });
+
+  it('hydrates primary and custom list badges onto search results (UT-04)', async () => {
+    const { tvmaze } = makeDeps();
+    const watchlistRepo = {
+      listAll: vi.fn().mockResolvedValue([]),
+      findBySeriesId: vi.fn().mockResolvedValue({ seriesId: 169, status: 'watching' }),
+    } as unknown as WatchlistRepository;
+    const { userListRepo, membershipRepo } = createInMemoryListRepositories(watchlistRepo);
+    const membershipService = new ListMembershipService({
+      userListRepo,
+      membershipRepo,
+      watchlistRepo,
+      watchedEpisodeRepo: { listBySeriesId: vi.fn().mockResolvedValue([]) } as never,
+      tvmaze,
+    });
+    const service = new SearchService(tvmaze, watchlistRepo, membershipService);
+    const res = await service.search({ query: 'br', type: 'series', locale: 'pt-BR' });
+    expect(res.items[0].lists[0]).toMatchObject({ id: 'watching', name: 'Assistindo', isSystem: true });
   });
 });

@@ -1,4 +1,5 @@
 import type { TranslationDictionary } from './en';
+import { LIST_PT_BR_DICTIONARY } from './listPtBR';
 
 export const PT_BR_DICTIONARY: TranslationDictionary = {
   appName: 'NEXT BINGE WATCH',
@@ -69,4 +70,5 @@ export const PT_BR_DICTIONARY: TranslationDictionary = {
   personPartialWarning: 'Alguns créditos não puderam ser carregados.',
   unknownValue: 'Não informado',
   genericError: 'Algo deu errado. Tente novamente.',
+  ...LIST_PT_BR_DICTIONARY,
 };

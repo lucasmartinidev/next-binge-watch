@@ -1,3 +1,4 @@
+import type { ListBadgeSummary } from './list';
 import type { Locale } from './locale';
 import type { EpisodePointer } from './watchlist';
 
@@ -18,6 +19,7 @@ export type NextBingeRecommendation = {
   sourceTier: RecommendationSourceTier;
   reason: string;
   inWatchlist: boolean;
+  lists: ListBadgeSummary[];
   nextEpisode: EpisodePointer | null;
   tvmazeUrl: string;
 };

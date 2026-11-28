@@ -53,6 +53,7 @@ describe('SeriesProfileView (UT-12)', () => {
       progressPercent: 0,
       nextEpisode: { id: 101, season: 1, number: 1, name: 'Pilot', airdate: '2008-01-20' },
     },
+    lists: [{ id: 'p-watching', name: 'Watching', icon: 'play' as const, color: 'violet' as const, isSystem: true, systemKey: 'watching' as const }],
     partialData: true,
   };
 
@@ -107,6 +108,8 @@ describe('SeriesProfileView (UT-12)', () => {
     expect(screen.getByRole('link', { name: /bryan cranston/i })).toHaveAttribute('href', '/people/14229');
     expect(screen.getByRole('link', { name: /vince gilligan/i })).toHaveAttribute('href', '/people/31870');
     expect(screen.getByRole('link', { name: /tvmaze/i })).toHaveAttribute('href', sampleProfile.tvmazeUrl);
+    expect(screen.getByRole('link', { name: 'Watching' })).toHaveAttribute('href', '/watchlist/p-watching');
+    expect(screen.getByRole('button', { name: /gerenciar listas/i })).toBeInTheDocument();
 
     await user.selectOptions(screen.getByLabelText('Status'), 'want_to_watch');
     await user.click(screen.getByRole('checkbox', { name: /S01E01/i }));
@@ -116,6 +119,44 @@ describe('SeriesProfileView (UT-12)', () => {
     expect(await screen.findByText('100%')).toBeInTheDocument();
 
     await user.click(screen.getByRole('button', { name: /remover da lista/i }));
+    expect(removeSpy).toHaveBeenCalledWith(169, 'pt-BR');
+  });
+
+  it('refreshes badges on episode toggle and prompts confirmation when untracking series in custom lists (BUG-03, BUG-04)', async () => {
+    const user = userEvent.setup();
+    const withCustom = {
+      ...sampleProfile,
+      tracking: { ...sampleProfile.tracking, inWatchlist: true, status: 'want_to_watch' as const },
+      lists: [
+        { id: 'want_to_watch', name: 'Quero Assistir', icon: 'bookmark' as const, color: 'cyan' as const, isSystem: true, systemKey: 'want_to_watch' as const },
+        { id: 'c1', name: 'Sci-Fi', icon: 'rocket' as const, color: 'violet' as const, isSystem: false, systemKey: null },
+      ],
+    };
+    const afterToggle = {
+      ...withCustom,
+      tracking: { ...withCustom.tracking, status: 'watching' as const, watchedEpisodes: 1, progressPercent: 50 },
+      lists: [
+        { id: 'watching', name: 'Assistindo', icon: 'play' as const, color: 'amber' as const, isSystem: true, systemKey: 'watching' as const },
+        { id: 'c1', name: 'Sci-Fi', icon: 'rocket' as const, color: 'violet' as const, isSystem: false, systemKey: null },
+      ],
+    };
+    vi.spyOn(seriesService, 'getSeriesProfile').mockResolvedValueOnce(withCustom).mockResolvedValueOnce(afterToggle);
+    vi.spyOn(watchlistService, 'toggleEpisodeWatched').mockResolvedValue(afterToggle.tracking);
+    const removeSpy = vi.spyOn(watchlistService, 'removeFromWatchlist').mockResolvedValue();
+    render(
+      <I18nProvider>
+        <MemoryRouter initialEntries={['/series/169']}>
+          <Routes><Route path="/series/:id" element={<SeriesProfileView />} /></Routes>
+        </MemoryRouter>
+      </I18nProvider>,
+    );
+    expect(await screen.findByRole('link', { name: 'Quero Assistir' })).toBeInTheDocument();
+    await user.click(screen.getByRole('checkbox', { name: /S01E01/i }));
+    expect(await screen.findByRole('link', { name: 'Assistindo' })).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: /remover da lista/i }));
+    expect(screen.getByRole('alertdialog')).toBeInTheDocument();
+    expect(removeSpy).not.toHaveBeenCalled();
+    await user.click(screen.getByRole('button', { name: /confirmar/i }));
     expect(removeSpy).toHaveBeenCalledWith(169, 'pt-BR');
   });
 });

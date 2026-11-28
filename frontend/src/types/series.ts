@@ -1,3 +1,4 @@
+import type { ListBadgeSummary } from './list';
 import type { SeriesTrackingState } from './watchlist';
 
 export type CastMember = {
@@ -50,5 +51,6 @@ export type SeriesProfile = {
   crew: CrewMember[] | null;
   seasons: SeasonGroup[];
   tracking: SeriesTrackingState;
+  lists?: ListBadgeSummary[];
   partialData: boolean;
 };

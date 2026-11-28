@@ -1,3 +1,5 @@
+import type { ListBadgeSummary } from './list';
+
 export type WatchStatus = 'want_to_watch' | 'watching' | 'watched';
 export type WatchlistFilter = WatchStatus | 'all';
 
@@ -30,6 +32,7 @@ export type WatchlistItem = {
   totalEpisodes: number;
   progressPercent: number;
   nextEpisode: EpisodePointer | null;
+  lists?: ListBadgeSummary[];
   tvmazeUrl: string;
   updatedAt: string;
 };

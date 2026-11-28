@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { MediaImage } from '@/components/common/MediaImage';
 import { HudPanel } from '@/components/ds/HudPanel';
 import { NeonButton } from '@/components/ds/NeonButton';
+import { ListMembershipBadges } from '@/components/lists/ListMembershipBadges';
 import { useI18n } from '@/hooks/useI18n';
 import { resolveGenreTheme } from '@/styles/genreThemes';
 import type { WatchStatus, WatchlistItem } from '@/types/watchlist';
@@ -51,6 +52,7 @@ export function WatchlistCard({ item, onChangeStatus, onRemove }: WatchlistCardP
           )}
         </div>
         <ProgressBar watched={item.watchedEpisodes} total={item.totalEpisodes} percent={item.progressPercent} />
+        <ListMembershipBadges lists={item.lists} />
         <WatchlistCardActions item={item} displayName={displayName} onChangeStatus={onChangeStatus} onRemove={onRemove} />
       </div>
     </HudPanel>

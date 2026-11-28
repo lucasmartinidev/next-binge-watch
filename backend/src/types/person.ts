@@ -1,3 +1,5 @@
+import type { ListBadgeSummary } from './list';
+
 export type PersonSeriesCredit = {
   seriesId: number;
   seriesName: string;
@@ -5,6 +7,7 @@ export type PersonSeriesCredit = {
   premieredYear: string | null;
   role: string;
   creditType: 'cast' | 'crew';
+  lists: ListBadgeSummary[];
 };
 
 export type PersonProfile = {
@@ -16,6 +19,7 @@ export type PersonProfile = {
   deathday: string | null;
   gender: string | null;
   tvmazeUrl: string;
+  lists: ListBadgeSummary[];
   castCredits: PersonSeriesCredit[] | null;
   crewCredits: PersonSeriesCredit[] | null;
   partialData: boolean;

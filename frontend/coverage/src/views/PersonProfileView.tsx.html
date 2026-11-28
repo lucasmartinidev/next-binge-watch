@@ -34,30 +34,30 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">100% </span>
+                <span class="strong">76.47% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>9/9</span>
+                <span class='fraction'>13/17</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">90% </span>
+                <span class="strong">91.66% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>9/10</span>
+                <span class='fraction'>11/12</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">100% </span>
+                <span class="strong">40% </span>
                 <span class="quiet">Functions</span>
-                <span class='fraction'>1/1</span>
+                <span class='fraction'>2/5</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">100% </span>
+                <span class="strong">81.25% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>9/9</span>
+                <span class='fraction'>13/16</span>
             </div>
         
             
@@ -72,7 +72,7 @@
             </div>
         </template>
     </div>
-    <div class='status-line high'></div>
+    <div class='status-line medium'></div>
     <pre><table class="coverage">
 <tr><td class="line-count quiet"><a name='L1'></a><a href='#L1'>1</a>
 <a name='L2'></a><a href='#L2'>2</a>
@@ -107,7 +107,14 @@
 <a name='L31'></a><a href='#L31'>31</a>
 <a name='L32'></a><a href='#L32'>32</a>
 <a name='L33'></a><a href='#L33'>33</a>
-<a name='L34'></a><a href='#L34'>34</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<a name='L34'></a><a href='#L34'>34</a>
+<a name='L35'></a><a href='#L35'>35</a>
+<a name='L36'></a><a href='#L36'>36</a>
+<a name='L37'></a><a href='#L37'>37</a>
+<a name='L38'></a><a href='#L38'>38</a>
+<a name='L39'></a><a href='#L39'>39</a>
+<a name='L40'></a><a href='#L40'>40</a>
+<a name='L41'></a><a href='#L41'>41</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -117,42 +124,55 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">6x</span>
-<span class="cline-any cline-yes">6x</span>
-<span class="cline-any cline-yes">6x</span>
-<span class="cline-any cline-yes">6x</span>
-<span class="cline-any cline-yes">6x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">7x</span>
+<span class="cline-any cline-yes">7x</span>
+<span class="cline-any cline-yes">7x</span>
+<span class="cline-any cline-yes">7x</span>
+<span class="cline-any cline-yes">7x</span>
+<span class="cline-any cline-yes">7x</span>
+<span class="cline-any cline-yes">7x</span>
 <span class="cline-any cline-yes">3x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">4x</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">import { useParams } from 'react-router-dom';
+<span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">import { useState } from 'react';
+import { useParams } from 'react-router-dom';
 import { ErrorState } from '@/components/common/ErrorState';
 import { LoadingState } from '@/components/common/LoadingState';
+import { ListMembershipModal, type ListMembershipSavePayload } from '@/components/lists/ListMembershipModal';
 import { PersonCreditsList } from '@/components/person/PersonCreditsList';
 import { PersonHeader } from '@/components/person/PersonHeader';
 import { usePageGenreTheme } from '@/hooks/useGenreTheme';
 import { useI18n } from '@/hooks/useI18n';
+import { useLists } from '@/hooks/useLists';
 import { usePersonProfile } from '@/hooks/usePersonProfile';
+import { updatePersonLists } from '@/services/listService';
 &nbsp;
 export function PersonProfileView() {
   const { id } = useParams();
-  const { t } = useI18n();
+  const { locale, t } = useI18n();
   const { profile, loading, error, retry } = usePersonProfile(Number(id));
+  const [manageOpen, setManageOpen] = useState(false);
+  const { lists } = useLists({ type: 'person', enabled: Boolean(profile) });
   usePageGenreTheme('person');
   if (loading) {
     return &lt;LoadingState /&gt;;
@@ -160,16 +180,17 @@ export function PersonProfileView() {
   if (error || !profile) {
     return &lt;ErrorState message={error ?? <span class="branch-1 cbranch-no" title="branch not covered" >t('genericError')} o</span>nRetry={retry} /&gt;;
   }
+  const handleSaveLists = <span class="fstat-no" title="function not covered" >async (p</span>ayload: ListMembershipSavePayload) =&gt; {
+<span class="cstat-no" title="statement not covered" >    await updatePersonLists(profile.id, { customListIds: payload.customListIds }, locale);</span>
+<span class="cstat-no" title="statement not covered" >    retry();</span>
+  };
   return (
     &lt;div className="space-y-8"&gt;
-      {profile.partialData &amp;&amp; (
-        &lt;p role="status" className="rounded-control border border-amber-400/40 bg-amber-500/10 px-4 py-2 text-xs font-medium text-amber-200 backdrop-blur-md"&gt;
-          {t('personPartialWarning')}
-        &lt;/p&gt;
-      )}
-      &lt;PersonHeader person={profile} /&gt;
+      {profile.partialData ? &lt;p role="status" className="rounded-control border border-amber-400/40 bg-amber-500/10 px-4 py-2 text-xs font-medium text-amber-200 backdrop-blur-md"&gt;{t('personPartialWarning')}&lt;/p&gt; : null}
+      &lt;PersonHeader person={profile} onManageLists={<span class="fstat-no" title="function not covered" >() =&gt; <span class="cstat-no" title="statement not covered" >s</span>etManageOpen(true)} /</span>&gt;
       &lt;PersonCreditsList heading={t('personCastCredits')} credits={profile.castCredits} /&gt;
       &lt;PersonCreditsList heading={t('personCrewCredits')} credits={profile.crewCredits} /&gt;
+      &lt;ListMembershipModal isOpen={manageOpen} entityType="person" entityTitle={profile.name} allLists={lists} currentListIds={(profile.lists ?? []).map((l) =&gt; l.id)} onClose={<span class="fstat-no" title="function not covered" >() =&gt; <span class="cstat-no" title="statement not covered" >s</span>etManageOpen(false)} o</span>nSave={handleSaveLists} /&gt;
     &lt;/div&gt;
   );
 }
@@ -180,7 +201,7 @@ export function PersonProfileView() {
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://vitest.dev/" target="_blank" rel="noopener noreferrer">Vitest</a>
-                at 2026-11-27T02:57:35.712Z
+                at 2026-11-28T01:12:13.065Z
             </div>
         <script src="../../prettify.js"></script>
         <script>

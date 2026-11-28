@@ -13,6 +13,7 @@ export default defineConfig({
         'src/**/*.test.ts',
         'src/data/testDatabase.ts',
         'src/services/inMemoryRepositories.ts',
+        'src/services/inMemoryListRepositories.ts',
         'src/types/**',
         'src/index.ts',
       ],

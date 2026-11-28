@@ -1,35 +1,26 @@
 import type { TvmazeClient } from '../data/tvmazeClient';
 import type { WatchlistRepository } from '../data/watchlistRepository';
+import type { ListBadgeSummary } from '../types/list';
 import type { Locale } from '../types/locale';
 import type { SearchResponse, SearchResultItem, SearchScope } from '../types/search';
 import type { TvmazePersonSearchResult, TvmazeShowSearchResult } from '../types/tvmaze';
+import type { ListMembershipService } from './listMembershipService';
 
-type ScoredResult = {
-  score: number;
-  item: SearchResultItem;
-};
+type ScoredResult = { score: number; item: SearchResultItem };
 
-function mapShowResult(
-  entry: TvmazeShowSearchResult,
-  akaBySeriesId: Map<number, string>,
-): ScoredResult {
+function mapShowResult(entry: TvmazeShowSearchResult, akaBySeriesId: Map<number, string>): ScoredResult {
   const { show } = entry;
   const premieredYear = show.premiered ? show.premiered.slice(0, 4) : null;
   const parts = [show.type, premieredYear].filter(Boolean);
   return {
     score: entry.score,
     item: {
-      id: show.id,
-      contentType: 'series',
-      name: show.name,
+      id: show.id, contentType: 'series', name: show.name,
       localizedName: akaBySeriesId.get(show.id) ?? null,
       imageUrl: show.image?.medium ?? show.image?.original ?? null,
       subtitle: parts.length > 0 ? parts.join(' · ') : null,
-      status: show.status ?? null,
-      rating: show.rating?.average ?? null,
-      premieredYear,
-      genres: show.genres ?? [],
-      tvmazeUrl: show.url,
+      status: show.status ?? null, rating: show.rating?.average ?? null,
+      premieredYear, genres: show.genres ?? [], tvmazeUrl: show.url, lists: [],
     },
   };
 }
@@ -39,17 +30,10 @@ function mapPersonResult(entry: TvmazePersonSearchResult): ScoredResult {
   return {
     score: entry.score,
     item: {
-      id: person.id,
-      contentType: 'person',
-      name: person.name,
-      localizedName: null,
+      id: person.id, contentType: 'person', name: person.name, localizedName: null,
       imageUrl: person.image?.medium ?? person.image?.original ?? null,
       subtitle: person.country?.name ?? null,
-      status: null,
-      rating: null,
-      premieredYear: null,
-      genres: [],
-      tvmazeUrl: person.url,
+      status: null, rating: null, premieredYear: null, genres: [], tvmazeUrl: person.url, lists: [],
     },
   };
 }
@@ -58,6 +42,7 @@ export class SearchService {
   constructor(
     private readonly tvmaze: TvmazeClient,
     private readonly watchlistRepo: WatchlistRepository,
+    private readonly membershipService?: ListMembershipService,
   ) {}
 
   async search(input: { query: string; type: SearchScope; locale: Locale }): Promise<SearchResponse> {
@@ -72,19 +57,30 @@ export class SearchService {
       ...shows.map((entry) => mapShowResult(entry, akaBySeriesId)),
       ...people.map((entry) => mapPersonResult(entry)),
     ];
-    const items = [...combined]
-      .sort((a, b) => b.score - a.score)
-      .map((entry) => entry.item);
+    const sorted = [...combined].sort((a, b) => b.score - a.score).map((entry) => entry.item);
+    const items = await this.hydrateBadges(sorted, input.locale);
     return { query: input.query, type: input.type, locale: input.locale, total: items.length, items };
+  }
+
+  private async hydrateBadges(items: SearchResultItem[], locale: Locale): Promise<SearchResultItem[]> {
+    if (!this.membershipService || items.length === 0) return items;
+    const seriesIds = items.filter((i) => i.contentType === 'series').map((i) => i.id);
+    const personIds = items.filter((i) => i.contentType === 'person').map((i) => i.id);
+    const [seriesMap, personMap]: [Map<number, ListBadgeSummary[]>, Map<number, ListBadgeSummary[]>] = await Promise.all([
+      this.membershipService.getSeriesBadgesMap(seriesIds, locale),
+      this.membershipService.getPersonBadgesMap(personIds),
+    ]);
+    return items.map((item) => ({
+      ...item,
+      lists: (item.contentType === 'series' ? seriesMap.get(item.id) : personMap.get(item.id)) ?? [],
+    }));
   }
 
   private async loadSavedAkas(): Promise<Map<number, string>> {
     const saved = await this.watchlistRepo.listAll();
     const map = new Map<number, string>();
     for (const row of saved) {
-      if (row.localizedNamePtBr) {
-        map.set(row.seriesId, row.localizedNamePtBr);
-      }
+      if (row.localizedNamePtBr) map.set(row.seriesId, row.localizedNamePtBr);
     }
     return map;
   }

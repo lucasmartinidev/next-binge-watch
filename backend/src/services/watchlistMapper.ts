@@ -1,4 +1,5 @@
 import type { StoredWatchlistRow } from '../data/watchlistRepository';
+import type { ListBadgeSummary } from '../types/list';
 import type { Locale } from '../types/locale';
 import type { TvmazeEpisode } from '../types/tvmaze';
 import type { EpisodePointer, WatchStatus, WatchlistItem } from '../types/watchlist';
@@ -10,6 +11,7 @@ export type WatchlistItemInput = {
   watchedEpisodes: number;
   locale: Locale;
   nextEpisode?: EpisodePointer | null;
+  lists?: ListBadgeSummary[];
 };
 
 export function computeSyncedStatus(
@@ -64,6 +66,7 @@ export function mapWatchlistItem(input: WatchlistItemInput): WatchlistItem {
     totalEpisodes: row.totalEpisodes,
     progressPercent,
     nextEpisode: input.nextEpisode ?? null,
+    lists: input.lists ?? [],
     tvmazeUrl: row.tvmazeUrl,
     updatedAt: row.updatedAt,
   };

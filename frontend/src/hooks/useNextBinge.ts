@@ -1,15 +1,23 @@
 import { useCallback, useState } from 'react';
 import { getNextBinge } from '@/services/recommendationService';
 import { addToWatchlist } from '@/services/watchlistService';
+import type { ListBadgeSummary } from '@/types/list';
 import type { NextBingeResponse } from '@/types/recommendation';
 import { useAsyncResource } from './useAsyncResource';
 import { useI18n } from './useI18n';
 
-function markInWatchlist(prev: NextBingeResponse | null): NextBingeResponse | null {
+function markInWatchlist(prev: NextBingeResponse | null, lists?: ListBadgeSummary[]): NextBingeResponse | null {
   if (!prev?.recommendation) {
     return prev;
   }
-  return { ...prev, recommendation: { ...prev.recommendation, inWatchlist: true } };
+  return {
+    ...prev,
+    recommendation: {
+      ...prev.recommendation,
+      inWatchlist: true,
+      lists: lists ?? prev.recommendation.lists,
+    },
+  };
 }
 
 export function useNextBinge() {
@@ -31,8 +39,8 @@ export function useNextBinge() {
     if (!recommendation) {
       return;
     }
-    await addToWatchlist({ seriesId: recommendation.seriesId, status: 'want_to_watch', locale });
-    setData(markInWatchlist);
+    const added = await addToWatchlist({ seriesId: recommendation.seriesId, status: 'want_to_watch', locale });
+    setData((prev) => markInWatchlist(prev, added.lists));
   }, [recommendation, locale, setData]);
   return {
     recommendation, hasMore: resource.data?.hasMore ?? false, loading: resource.loading,

@@ -50,6 +50,7 @@ export function withResetTracking(profile: SeriesProfile): SeriesProfile {
   return {
     ...profile,
     seasons,
+    lists: [],
     tracking: {
       inWatchlist: false,
       status: null,

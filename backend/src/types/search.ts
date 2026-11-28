@@ -1,3 +1,4 @@
+import type { ListBadgeSummary } from './list';
 import type { Locale } from './locale';
 
 export type SearchScope = 'all' | 'series' | 'person';
@@ -15,6 +16,7 @@ export type SearchResultItem = {
   premieredYear: string | null;
   genres: string[];
   tvmazeUrl: string;
+  lists: ListBadgeSummary[];
 };
 
 export type SearchResponse = {

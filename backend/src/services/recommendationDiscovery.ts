@@ -48,6 +48,7 @@ function mapDiscoveryShow(
     sourceTier: matchedGenre ? 'genre_discovery' : 'top_rated',
     reason: matchedGenre ? formatGenreDiscoveryReason(locale, matchedGenre) : formatTopRatedReason(locale),
     inWatchlist: false,
+    lists: [],
     nextEpisode: null,
     tvmazeUrl: show.url,
   };

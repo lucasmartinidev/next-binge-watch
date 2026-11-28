@@ -1,6 +1,8 @@
 export type ErrorCode =
   | 'VALIDATION_ERROR'
+  | 'FORBIDDEN'
   | 'NOT_FOUND'
+  | 'CONFLICT'
   | 'UPSTREAM_RATE_LIMITED'
   | 'UPSTREAM_UNAVAILABLE'
   | 'UPSTREAM_TIMEOUT'
@@ -20,6 +22,21 @@ export type MessageKey =
   | 'watchlist.invalidWatchedFlag'
   | 'watchlist.episodeNotFound'
   | 'watchlist.seasonNotFound'
+  | 'lists.notFound'
+  | 'lists.invalidEntityType'
+  | 'lists.invalidName'
+  | 'lists.nameTaken'
+  | 'lists.descriptionTooLong'
+  | 'lists.invalidIcon'
+  | 'lists.invalidColor'
+  | 'lists.invalidTags'
+  | 'lists.tooManyTags'
+  | 'lists.tagTooLong'
+  | 'lists.primaryProtected'
+  | 'lists.entityTypeImmutable'
+  | 'lists.crossTypeNotAllowed'
+  | 'lists.invalidListIds'
+  | 'lists.itemNotFound'
   | 'preferences.invalidLocale'
   | 'recommendations.invalidExcludeIds'
   | 'upstream.rateLimited'
@@ -36,7 +53,9 @@ export type ApiErrorResponse = {
 
 const ERROR_STATUS_BY_CODE: Record<ErrorCode, number> = {
   VALIDATION_ERROR: 400,
+  FORBIDDEN: 403,
   NOT_FOUND: 404,
+  CONFLICT: 409,
   UPSTREAM_RATE_LIMITED: 429,
   UPSTREAM_UNAVAILABLE: 502,
   UPSTREAM_TIMEOUT: 504,

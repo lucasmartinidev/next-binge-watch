@@ -6,6 +6,7 @@ import type { Locale } from '../types/locale';
 import type { NextBingeRecommendation, NextBingeResponse } from '../types/recommendation';
 import { stripHtml } from './htmlSanitizer';
 import { extractPreferredGenres, rankDiscoveryShows } from './recommendationDiscovery';
+import type { ListMembershipService } from './listMembershipService';
 import { buildWantToWatchPicks, toWatchingPick } from './recommendationPicks';
 import { findNextEpisode } from './watchlistMapper';
 
@@ -16,11 +17,18 @@ type RecommendationContext = {
 };
 
 export class RecommendationService {
+  private membershipService?: ListMembershipService;
+
   constructor(
     private readonly tvmaze: TvmazeClient,
     private readonly watchlistRepo: WatchlistRepository,
     private readonly watchedEpisodeRepo: WatchedEpisodeRepository,
   ) {}
+
+  withMembershipService(service: ListMembershipService): this {
+    this.membershipService = service;
+    return this;
+  }
 
   async getNextBinge(input: { locale: Locale; excludeIds: number[] }): Promise<NextBingeResponse> {
     const saved = await this.watchlistRepo.listAll();
@@ -31,7 +39,15 @@ export class RecommendationService {
     ];
     const discoveryPicks = await this.loadDiscoveryPicks(context, watchlistPicks.length > 0);
     const candidates = [...watchlistPicks, ...discoveryPicks];
-    return { locale: input.locale, recommendation: candidates[0] ?? null, hasMore: candidates.length > 1 };
+    const top = candidates[0] ?? null;
+    const recommendation = top ? await this.attachBadges(top, input.locale) : null;
+    return { locale: input.locale, recommendation, hasMore: candidates.length > 1 };
+  }
+
+  private async attachBadges(pick: NextBingeRecommendation, locale: Locale): Promise<NextBingeRecommendation> {
+    if (!this.membershipService) return pick;
+    const badgesMap = await this.membershipService.getSeriesBadgesMap([pick.seriesId], locale);
+    return { ...pick, lists: badgesMap.get(pick.seriesId) ?? [] };
   }
 
   private async buildWatchingPicks(context: RecommendationContext): Promise<NextBingeRecommendation[]> {
